@@ -1,7 +1,6 @@
 import { Link } from 'react-router'
 import { EVENTS, sortEvents } from '../events'
 import { eventPath } from '../paths'
-import { Footer } from './Footer'
 
 const today = () => new Date().toLocaleDateString('sv-SE')
 
@@ -52,7 +51,6 @@ export function StartPage() {
         För Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil och resten av Saltsjö-Boo. Det du lägger in syns för
         alla som besöker sidan.
       </p>
-      <Footer />
     </main>
   )
 }
