@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
 import { ApiError, lookupEntry } from '../lib/api'
 import { useMyEntryRef } from '../lib/myEntry'
+import { eventPath } from '../paths'
 
 type ClaimState = { status: 'pending' } | { status: 'done' } | { status: 'error'; message: string }
 
@@ -29,7 +30,7 @@ export function ClaimEditLink() {
     }
   }, [eventId, token, setRef])
 
-  if (state.status === 'done') return <Navigate to={`/e/${eventId}`} replace />
+  if (state.status === 'done') return <Navigate to={eventPath(eventId)} replace />
 
   return (
     <main className="page narrow">
@@ -39,7 +40,7 @@ export function ClaimEditLink() {
         <>
           <h1>Länken fungerar inte</h1>
           <p>{state.message}</p>
-          <Link to={`/e/${eventId}`}>Till kartan</Link>
+          <Link to={eventPath(eventId)}>Till kartan</Link>
         </>
       )}
     </main>

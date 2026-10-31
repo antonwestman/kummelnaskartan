@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { SCRIPT_URL } from '../config'
 import { findEvent, type KummelnasEvent } from '../events'
@@ -7,6 +7,7 @@ import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry } from '../lib/api'
 import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { useMyEntryRef } from '../lib/myEntry'
+import { eventSeo } from '../seo'
 import { EntryList } from './EntryList'
 import { EventMap, type Selection } from './EventMap'
 import { MySignup } from './MySignup'
@@ -23,6 +24,14 @@ const RADII = [300, 500, 1000] as const
 
 function EventView({ event }: { event: KummelnasEvent }) {
   const configured = SCRIPT_URL !== ''
+
+  useEffect(() => {
+    const previous = document.title
+    document.title = eventSeo(event).title
+    return () => {
+      document.title = previous
+    }
+  }, [event])
   const { state, reload, upsert, remove } = useEntries(event.id, configured)
   const [myRef, setMyRef] = useMyEntryRef(event.id)
   const [locating, setLocating] = useState(false)
