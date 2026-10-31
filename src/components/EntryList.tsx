@@ -5,18 +5,21 @@ type Props = {
   entries: Entry[]
   myEntryId: string | null
   userPosition: Position | null
+  radius: number | null
   loading: boolean
   onShow: (entry: Entry) => void
 }
 
-export function EntryList({ entries, myEntryId, userPosition, loading, onShow }: Props) {
+export function EntryList({ entries, myEntryId, userPosition, radius, loading, onShow }: Props) {
   return (
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" className="section-label">
         {loading ? 'Hus' : `${entries.length} hus`}
-        {userPosition && ' · närmast först'}
+        {radius ? ` inom ${formatDistance(radius)}` : userPosition && ' · närmast först'}
       </h2>
-      {!loading && entries.length === 0 && <p className="muted">Inga hus än.</p>}
+      {!loading && entries.length === 0 && (
+        <p className="muted">{radius ? 'Inga hus så nära. Prova ett större avstånd.' : 'Inga hus än.'}</p>
+      )}
       <ul className="entries">
         {entries.map((entry) => (
           <li key={entry.id}>

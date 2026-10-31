@@ -206,6 +206,41 @@ code {
   cursor: pointer;
 }
 
+.radius {
+  position: absolute;
+  z-index: 500;
+  left: 12px;
+  bottom: 28px;
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.radius button {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: none;
+  border-left: 1px solid var(--line);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.radius button:first-child {
+  border-left: none;
+}
+
+.radius button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #1a0f04;
+  font-weight: 600;
+}
+
 .locate.active {
   color: #5b9bff;
 }
