@@ -469,6 +469,11 @@ details > p {
   font: inherit;
 }
 
+/* Gör den ljusa OSM-kartan mörk. Bara bakgrunden – markörerna ligger i ett eget lager. */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
+}
+
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
   background: var(--surface);
