@@ -18,7 +18,9 @@ it('submits address, name and note', async () => {
   await userEvent.type(screen.getByLabelText(/Meddelande/), 'Öppet 17–19')
   await userEvent.click(screen.getByRole('button', { name: 'Lägg till på kartan' }))
 
-  expect(submitted).toEqual([{ address: 'Kummelnäsvägen 12', name: 'Familjen A', note: 'Öppet 17–19' }])
+  expect(submitted).toEqual([
+    { address: 'Kummelnäsvägen 12', name: 'Familjen A', note: 'Öppet 17–19', openFrom: '', openUntil: '' },
+  ])
 })
 
 it('shows the server error message and keeps the input', async () => {

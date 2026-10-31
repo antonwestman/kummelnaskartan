@@ -24,7 +24,7 @@ export const EVENTS: KummelnasEvent[] = [
     dateLabel: 'Lördag 31 oktober',
     summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som öppnat upp för bus eller godis.',
     details: ['Glöm inte reflexer.'],
-    notePlaceholder: 'Öppet 17–19',
+    notePlaceholder: 'Har nötfritt godis',
   },
 ]
 

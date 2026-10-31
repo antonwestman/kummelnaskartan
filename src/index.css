@@ -377,6 +377,17 @@ code {
   margin-top: 0;
 }
 
+.hours {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hours > div {
+  display: grid;
+  gap: 6px;
+}
+
 .optional {
   font-weight: 400;
   color: var(--muted);

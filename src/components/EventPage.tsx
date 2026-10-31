@@ -9,6 +9,9 @@ import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { matchesQuery, sortByAddress } from '../lib/search'
 import { trackEvent, type AnalyticsEvent } from '../lib/analytics'
 import { useMyEntryRef } from '../lib/myEntry'
+import { useNow } from '../hooks/useNow'
+import { stockholmMinutes } from '../lib/hours'
+import { withStatus } from '../lib/status'
 import { eventSeo } from '../seo'
 import { EntryList } from './EntryList'
 import { EventMap, type Selection } from './EventMap'
@@ -52,7 +55,10 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const mapRef = useRef<HTMLElement>(null)
   const signupRef = useRef<HTMLElement>(null)
 
-  const entries = state.status === 'ready' ? state.entries : []
+  const now = useNow(60_000)
+  const rawEntries = state.status === 'ready' ? state.entries : []
+  // Status (tänd/släckt/stängd) räknas fram vid varje render – inget sparas.
+  const entries = withStatus(rawEntries, stockholmMinutes(now))
   const myEntry = myRef ? entries.find((e) => e.id === myRef.entryId) : undefined
   const userPosition = geo.status === 'on' ? geo.position : null
   // Radien gäller först när positionen är känd.
@@ -62,8 +68,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const nearbyEntries =
     userPosition && activeRadius ? withinRadius(searchedEntries, userPosition, activeRadius) : searchedEntries
   const ordered = userPosition ? sortByDistance(nearbyEntries, userPosition) : sortByAddress(nearbyEntries)
-  // Släckta hus sist, men i samma ordning sinsemellan.
-  const sortedEntries = [...ordered.filter((e) => !e.paused), ...ordered.filter((e) => e.paused)]
+  // Släckta och stängda hus sist, men i samma ordning sinsemellan.
+  const sortedEntries = [...ordered.filter((e) => e.status === 'open'), ...ordered.filter((e) => e.status !== 'open')]
 
   // Nekad eller misslyckad position: visa "Alla" och en släckt knapp i stället för ett filter som inte gäller.
   const shownRadius = geoFailed ? null : radius

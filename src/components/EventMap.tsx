@@ -3,7 +3,9 @@ import L from 'leaflet'
 import { Circle, CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import { displayAddress } from '../lib/address'
-import type { Entry, Position } from '../lib/api'
+import type { Position } from '../lib/api'
+import { formatHours } from '../lib/hours'
+import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { walkingDirectionsUrl } from '../lib/geo'
 import { pinIcon } from './markerIcon'
 
@@ -11,7 +13,7 @@ import { pinIcon } from './markerIcon'
 export type Selection = { id: string; position: Position }
 
 type Props = {
-  entries: Entry[]
+  entries: ShownEntry[]
   myEntryId: string | null
   userPosition: Position | null
   locating: boolean
@@ -35,8 +37,8 @@ export function EventMap({ entries, myEntryId, userPosition, locating, radius, s
         <Marker
           key={entry.id}
           position={[entry.lat, entry.lng]}
-          icon={pinIcon(entry.paused ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
-          zIndexOffset={entry.paused ? -1000 : 0}
+          icon={pinIcon(entry.status !== 'open' ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
+          zIndexOffset={entry.status !== 'open' ? -1000 : 0}
           ref={(marker) => {
             if (marker) markers.current.set(entry.id, marker)
             else markers.current.delete(entry.id)
@@ -44,7 +46,8 @@ export function EventMap({ entries, myEntryId, userPosition, locating, radius, s
         >
           <Popup>
             <strong>{displayAddress(entry.address)}</strong>
-            {entry.paused && <div className="muted">Släckt</div>}
+            {entry.status !== 'open' && <div className="muted">{STATUS_LABEL[entry.status].replace(/^./, (c) => c.toUpperCase())}</div>}
+            {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
             {entry.name && <div>{entry.name}</div>}
             {entry.note && <div className="muted">{entry.note}</div>}
             <a href={walkingDirectionsUrl(entry)} target="_blank" rel="noreferrer">
@@ -77,7 +80,7 @@ export function EventMap({ entries, myEntryId, userPosition, locating, radius, s
 }
 
 /** Zooma så att alla hus syns första gången de laddats. */
-function FitToEntriesOnce({ entries }: { entries: Entry[] }) {
+function FitToEntriesOnce({ entries }: { entries: ShownEntry[] }) {
   const map = useMap()
   const done = useRef(false)
   useEffect(() => {

@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from 'react'
 import { ApiError, type EntryInput, type Position } from '../lib/api'
 import { PositionPicker } from './PositionPicker'
 
-export type SignupValues = { address: string; name: string; note: string }
+export type SignupValues = { address: string; name: string; note: string; openFrom: string; openUntil: string }
 
 type Props = {
   notePlaceholder: string
@@ -15,7 +15,7 @@ type Props = {
 
 type Status = { kind: 'idle' } | { kind: 'submitting' } | { kind: 'error'; message: string }
 
-const EMPTY: SignupValues = { address: '', name: '', note: '' }
+const EMPTY: SignupValues = { address: '', name: '', note: '', openFrom: '', openUntil: '' }
 
 export function SignupForm({ notePlaceholder, initialValues = EMPTY, submitLabel, onSubmit, onCancel }: Props) {
   const id = useId()
@@ -73,6 +73,21 @@ export function SignupForm({ notePlaceholder, initialValues = EMPTY, submitLabel
         value={values.name}
         onChange={set('name')}
       />
+
+      <div className="hours">
+        <div>
+          <label htmlFor={`${id}-from`}>
+            Öppet från <span className="optional">(valfritt)</span>
+          </label>
+          <input id={`${id}-from`} name="openFrom" type="time" value={values.openFrom} onChange={set('openFrom')} />
+        </div>
+        <div>
+          <label htmlFor={`${id}-until`}>
+            Öppet till <span className="optional">(valfritt)</span>
+          </label>
+          <input id={`${id}-until`} name="openUntil" type="time" value={values.openUntil} onChange={set('openUntil')} />
+        </div>
+      </div>
 
       <label htmlFor={`${id}-note`}>
         Meddelande <span className="optional">(valfritt)</span>
