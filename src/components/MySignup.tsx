@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { KummelnasEvent } from '../events'
 import { ApiError, createEntry, deleteEntry, updateEntry, type Entry } from '../lib/api'
 import { editLink, type MyEntryRef } from '../lib/myEntry'
+import { trackEvent } from '../lib/analytics'
 import { SignupForm } from './SignupForm'
 
 type Props = {
@@ -35,6 +36,7 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
           submitLabel="Lägg till på kartan"
           onSubmit={async (input) => {
             const { entry, token } = await createEntry(event.id, input)
+            trackEvent('hus-tillagt')
             onSaved(entry, token)
           }}
         />
@@ -52,6 +54,7 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
           submitLabel="Spara ändringar"
           onSubmit={async (input) => {
             const entry = await updateEntry(event.id, myRef.token, input)
+            trackEvent('hus-andrat')
             onSaved(entry, myRef.token)
             setEditing(false)
           }}
@@ -96,6 +99,7 @@ function MyEntrySummary({
     setDeleteState({ kind: 'deleting' })
     try {
       await deleteEntry(event.id, token)
+      trackEvent('hus-borttaget')
       onDeleted()
     } catch (err) {
       setDeleteState({

@@ -7,6 +7,7 @@ import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry } from '../lib/api'
 import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { matchesQuery, sortByAddress } from '../lib/search'
+import { trackEvent, type AnalyticsEvent } from '../lib/analytics'
 import { useMyEntryRef } from '../lib/myEntry'
 import { eventSeo } from '../seo'
 import { EntryList } from './EntryList'
@@ -22,6 +23,12 @@ export function EventPage() {
 }
 
 const RADII = [300, 500, 1000] as const
+
+const RADIUS_EVENTS: Record<(typeof RADII)[number], AnalyticsEvent> = {
+  300: 'avstand-300m',
+  500: 'avstand-500m',
+  1000: 'avstand-1km',
+}
 
 function EventView({ event }: { event: KummelnasEvent }) {
   const configured = SCRIPT_URL !== ''
@@ -65,7 +72,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
     setLocateAttempt((n) => n + 1)
   }
 
-  const chooseRadius = (value: number | null) => {
+  const chooseRadius = (value: (typeof RADII)[number] | null) => {
+    if (value) trackEvent(RADIUS_EVENTS[value])
     setRadius(value)
     if (value && !locateActive) startLocating()
   }
@@ -75,8 +83,19 @@ function EventView({ event }: { event: KummelnasEvent }) {
       setLocating(false)
       setRadius(null)
     } else {
+      trackEvent('min-position')
       startLocating()
     }
+  }
+
+  // Räkna bara att någon söker, en gång per besök – aldrig vad de skriver.
+  const searchTracked = useRef(false)
+  const changeQuery = (value: string) => {
+    if (!searchTracked.current && value.trim()) {
+      searchTracked.current = true
+      trackEvent('sok')
+    }
+    setQuery(value)
   }
 
   const showOnMap = (entry: Entry) => {
@@ -167,7 +186,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
               userPosition={userPosition}
               radius={activeRadius}
               query={query}
-              onQueryChange={setQuery}
+              onQueryChange={changeQuery}
               loading={state.status === 'loading'}
               onShow={showOnMap}
             />
