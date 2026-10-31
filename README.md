@@ -38,7 +38,15 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
 ## Lägga till ett nytt event
 
 1. Lägg till en ny flik i Sheetet, t.ex. `promenadloppis-2027`.
-2. Lägg till eventet i `src/events.ts` med samma `id`.
+2. Lägg till samma id i `EVENT_IDS` överst i `apps-script/Code.gs`, klistra in i Apps Script och publicera en ny version.
+3. Lägg till eventet i `src/events.ts` med samma `id`.
+
+## Säkerhet
+
+- Ändra/ta bort kräver anmälans hemliga token. Tokens visas aldrig publikt.
+- Bara flikar listade i `EVENT_IDS` kan läsas eller skrivas. Andra flikar i Sheetet är skyddade.
+- Högst `MAX_CREATES_PER_MINUTE` nya anmälningar per minut (totalt) och `MAX_ENTRIES_PER_EVENT` per event.
+- Vem som helst kan lägga in en adress. Håll koll på Sheetet och radera rader som ser fel ut.
 
 ## Utveckling
 

@@ -6,6 +6,14 @@
  * Se README.md för installation.
  */
 
+// Endast dessa flikar räknas som event. Lägg till nya här (samma id som i src/events.ts).
+// Andra flikar i samma Sheet kan då aldrig läsas eller skrivas via webbappen.
+var EVENT_IDS = ['halloween-2026'];
+
+// Skydd mot skräpposter. Gäller totalt för alla besökare (Apps Script ser inte IP-adresser).
+var MAX_CREATES_PER_MINUTE = 15;
+var MAX_ENTRIES_PER_EVENT = 300;
+
 var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note'];
 
 // Ungefärlig ruta runt Kummelnäs/Boo. Adresser utanför avvisas så att
@@ -52,7 +60,10 @@ function lookup_(sheet, body) {
 }
 
 function create_(sheet, body) {
-  if (body.website) throw userError_('bad_request', 'Ogiltig anmälan.'); // honeypot
+  if (readRows_(sheet).length >= MAX_ENTRIES_PER_EVENT) {
+    throw userError_('event_full', 'Kartan är full för det här eventet. Kontakta den som ordnar.');
+  }
+  checkRateLimit_(body.event);
   var fields = cleanFields_(body);
   var position = resolvePosition_(fields.address, body.position);
   var now = new Date().toISOString();
@@ -118,9 +129,11 @@ function userError_(code, message) {
   return err;
 }
 
-/** Endast befintliga flikar räknas som event – inga nya skapas via API:t. */
+/** Endast flikar i EVENT_IDS räknas som event – inga nya skapas via API:t. */
 function getEventSheet_(eventId) {
-  if (typeof eventId !== 'string' || !eventId) throw userError_('bad_request', 'Event saknas.');
+  if (typeof eventId !== 'string' || EVENT_IDS.indexOf(eventId) === -1) {
+    throw userError_('unknown_event', 'Eventet finns inte.');
+  }
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(eventId);
   if (!sheet) throw userError_('unknown_event', 'Eventet finns inte.');
   if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
@@ -140,6 +153,17 @@ function readRows_(sheet) {
       return entry;
     })
     .filter(function (entry) { return entry.id && isFinite(entry.lat) && isFinite(entry.lng); });
+}
+
+/** Räknar nya anmälningar per minut och event. Körs inuti låset i doPost. */
+function checkRateLimit_(eventId) {
+  var cache = CacheService.getScriptCache();
+  var key = 'creates:' + eventId + ':' + Math.floor(Date.now() / 60000);
+  var count = Number(cache.get(key) || 0);
+  if (count >= MAX_CREATES_PER_MINUTE) {
+    throw userError_('rate_limited', 'Många anmäler sig just nu. Vänta en minut och försök igen.');
+  }
+  cache.put(key, String(count + 1), 120);
 }
 
 function findByToken_(sheet, token) {
