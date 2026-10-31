@@ -4,6 +4,7 @@ import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry,
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { displayAddress } from '../lib/address'
+import { EntryDetails } from './EntryList'
 import { SignupForm } from './SignupForm'
 
 type Props = {
@@ -58,7 +59,13 @@ export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: 
         <h2 id="signup-heading">Ändra</h2>
         <SignupForm
           notePlaceholder={event.notePlaceholder}
-          initialValues={{ address: myEntry.address, name: myEntry.name, note: myEntry.note }}
+          initialValues={{
+            address: myEntry.address,
+            name: myEntry.name,
+            note: myEntry.note,
+            openFrom: myEntry.openFrom,
+            openUntil: myEntry.openUntil,
+          }}
           submitLabel="Spara ändringar"
           onSubmit={async (input) => {
             const entry = await updateEntry(event.id, myRef.token, input)
@@ -184,7 +191,7 @@ function MyEntrySummary({
       <h2 id="signup-heading">{entry.paused ? 'Ditt hus är släckt' : 'Du är med på kartan'}</h2>
       <p className="my-entry">
         <strong>{displayAddress(entry.address)}</strong>
-        {(entry.name || entry.note) && <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>}
+        <EntryDetails entry={entry} />
       </p>
       <p className="muted small">
         {entry.paused

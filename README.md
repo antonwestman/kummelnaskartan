@@ -53,6 +53,13 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
 Tider skrivs med tidszon: `2026-11-01T00:00:00+01:00` (vintertid) eller `+02:00` (sommartid). Eventet får automatiskt en egen sida
    (`kummelnaskartan.se/<id>/`) med titel, beskrivning och Event-data för Google, och hamnar i sitemap.xml.
 
+### Kolumner i Sheetet
+
+`id`, `token`, `createdAt`, `updatedAt`, `address`, `lat`, `lng`, `name`, `note`, `paused`, `openFrom`, `openUntil`.
+Nya kolumner läggs till automatiskt. `paused` = TRUE/FALSE (släckt hus). `openFrom`/`openUntil` = klockslag
+som `17:00` (kolumnerna sätts till ren text så att Sheets inte gör om dem). När `openUntil` har passerat visas
+huset som stängt.
+
 ## Sidor och sökmotorer
 
 Appen använder vanliga sökvägar (`/`, `/halloween-2026/`). Efter `vite build` kör

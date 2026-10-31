@@ -18,8 +18,11 @@ var EVENTS = {
 var MAX_CREATES_PER_MINUTE = 15;
 var MAX_ENTRIES_PER_EVENT = 300;
 
-// 'paused' = huset är släckt (syns grått på kartan). Kolumnen läggs till automatiskt i befintliga flikar.
-var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused'];
+// 'paused' = huset är släckt (syns grått på kartan).
+// 'openFrom'/'openUntil' = valfria klockslag "HH:MM", lagras som text.
+// Nya kolumner läggs till automatiskt i befintliga flikar.
+var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused', 'openFrom', 'openUntil'];
+var TIME_COLUMNS = ['openFrom', 'openUntil'];
 
 // Ungefärlig ruta runt Boo (Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil m.fl.).
 // Adresser utanför avvisas så att felaktiga geokodningar inte hamnar på kartan.
@@ -91,7 +94,9 @@ function create_(sheet, body) {
     lng: position.lng,
     name: fields.name,
     note: fields.note,
-    paused: false
+    paused: false,
+    openFrom: fields.openFrom,
+    openUntil: fields.openUntil
   };
   sheet.appendRow(HEADERS.map(function (h) { return entry[h]; }));
   return { ok: true, entry: publicEntry_(entry), token: entry.token };
@@ -112,6 +117,8 @@ function update_(sheet, body) {
   entry.lng = position.lng;
   entry.name = fields.name;
   entry.note = fields.note;
+  entry.openFrom = fields.openFrom;
+  entry.openUntil = fields.openUntil;
   writeRow_(sheet, row.rowNumber, entry);
   return { ok: true, entry: publicEntry_(entry) };
 }
@@ -169,11 +176,40 @@ function getEventSheet_(eventId) {
   if (!sheet) throw userError_('unknown_event', 'Eventet finns inte.');
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
+    formatTimeColumnsAsText_(sheet);
   } else if (sheet.getRange(1, HEADERS.length).getValue() !== HEADERS[HEADERS.length - 1]) {
     // Äldre flik utan de senaste kolumnerna: skriv om rubrikraden (datan påverkas inte).
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    formatTimeColumnsAsText_(sheet);
   }
   return sheet;
+}
+
+/** Annars gör Sheets om "17:00" till ett klockslag med datum – även när man skriver in det för hand. */
+function formatTimeColumnsAsText_(sheet) {
+  TIME_COLUMNS.forEach(function (name) {
+    sheet.getRange(1, HEADERS.indexOf(name) + 1, sheet.getMaxRows(), 1).setNumberFormat('@');
+  });
+}
+
+/** "HH:MM" eller ''. Klarar också värden som Sheets redan gjort om till klockslag. */
+function timeValue_(value) {
+  if (value instanceof Date) {
+    var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    return Utilities.formatDate(value, tz, 'HH:mm');
+  }
+  return normalizeTime_(value);
+}
+
+/** "17", "17.30", "17:30", "1730" -> "17:00"/"17:30". Ogiltigt eller tomt -> ''. */
+function normalizeTime_(value) {
+  var match = String(value || '').trim().match(/^(\d{1,2})(?:[:.]?(\d{2}))?$/);
+  if (!match) return '';
+  var hours = Number(match[1]);
+  var minutes = Number(match[2] || 0);
+  if (hours > 24 || minutes > 59 || (hours === 24 && minutes > 0)) return '';
+  if (hours === 24) hours = 0;
+  return (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
 }
 
 function readRows_(sheet) {
@@ -187,6 +223,8 @@ function readRows_(sheet) {
       entry.lng = Number(entry.lng);
       entry.updatedAt = String(entry.updatedAt);
       entry.paused = entry.paused === true || String(entry.paused).toUpperCase() === 'TRUE';
+      entry.openFrom = timeValue_(entry.openFrom);
+      entry.openUntil = timeValue_(entry.openUntil);
       return entry;
     })
     .filter(function (entry) { return entry.id && isFinite(entry.lat) && isFinite(entry.lng); });
@@ -240,6 +278,8 @@ function publicEntry_(entry) {
     name: String(entry.name || ''),
     note: String(entry.note || ''),
     paused: entry.paused === true,
+    openFrom: entry.openFrom || '',
+    openUntil: entry.openUntil || '',
     updatedAt: String(entry.updatedAt)
   };
 }
@@ -278,7 +318,9 @@ function cleanFields_(body) {
   return {
     address: address,
     name: clean_(body.name, MAX_LENGTH.name),
-    note: clean_(body.note, MAX_LENGTH.note)
+    note: clean_(body.note, MAX_LENGTH.note),
+    openFrom: normalizeTime_(body.openFrom),
+    openUntil: normalizeTime_(body.openUntil)
   };
 }
 

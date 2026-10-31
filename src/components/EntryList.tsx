@@ -1,23 +1,25 @@
 import { displayAddress } from '../lib/address'
 import type { Entry, Position } from '../lib/api'
+import { formatHours } from '../lib/hours'
+import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { distanceInMeters, formatDistance } from '../lib/geo'
 
 type Props = {
-  entries: Entry[]
+  entries: ShownEntry[]
   myEntryId: string | null
   userPosition: Position | null
   radius: number | null
   query: string
   onQueryChange: (query: string) => void
   loading: boolean
-  onShow: (entry: Entry) => void
+  onShow: (entry: ShownEntry) => void
 }
 
 export function EntryList({ entries, myEntryId, userPosition, radius, query, onQueryChange, loading, onShow }: Props) {
   return (
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" className="section-label">
-        {loading ? 'Hus' : `${entries.filter((e) => !e.paused).length} hus`}
+        {loading ? 'Hus' : `${entries.filter((e) => e.status === 'open').length} hus`}
         {radius ? ` inom ${formatDistance(radius)}` : userPosition && ' · närmast först'}
       </h2>
       <input
@@ -42,16 +44,14 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
       <ul className="entries">
         {entries.map((entry) => (
           <li key={entry.id}>
-            <button type="button" className={`entry${entry.paused ? ' off' : ''}`} onClick={() => onShow(entry)}>
+            <button type="button" className={`entry${entry.status !== 'open' ? ' off' : ''}`} onClick={() => onShow(entry)}>
               <span className="entry-text">
                 <span className="entry-address">
                   {displayAddress(entry.address)}
                   {entry.id === myEntryId && <span className="muted"> (du)</span>}
-                  {entry.paused && <span className="muted"> · släckt</span>}
+                  {entry.status !== 'open' && <span className="muted"> · {STATUS_LABEL[entry.status]}</span>}
                 </span>
-                {(entry.name || entry.note) && (
-                  <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>
-                )}
+                <EntryDetails entry={entry} />
               </span>
               {userPosition && (
                 <span className="entry-distance">{formatDistance(distanceInMeters(userPosition, entry))}</span>
@@ -62,4 +62,10 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
       </ul>
     </section>
   )
+}
+
+/** Namn · öppettider · meddelande, det som finns. */
+export function EntryDetails({ entry }: { entry: Pick<Entry, 'name' | 'note' | 'openFrom' | 'openUntil'> }) {
+  const parts = [entry.name, formatHours(entry), entry.note].filter(Boolean)
+  return parts.length > 0 ? <span className="muted">{parts.join(' · ')}</span> : null
 }

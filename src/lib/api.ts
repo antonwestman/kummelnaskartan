@@ -10,6 +10,9 @@ const EntrySchema = z.object({
   note: z.string(),
   /** Släckt hus: syns grått och sist. Saknas i svar från äldre skript. */
   paused: z.boolean().optional().transform((paused) => paused ?? false),
+  /** "HH:MM" eller ''. Saknas i svar från äldre skript. */
+  openFrom: z.string().optional().transform((time) => time ?? ''),
+  openUntil: z.string().optional().transform((time) => time ?? ''),
   updatedAt: z.string(),
 })
 
@@ -21,6 +24,9 @@ export type EntryInput = {
   address: string
   name: string
   note: string
+  /** "HH:MM" eller tom sträng. */
+  openFrom: string
+  openUntil: string
   /** Manuellt vald position. Utelämnas för att låta servern geokoda adressen. */
   position?: Position
 }
