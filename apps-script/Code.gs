@@ -16,9 +16,9 @@ var MAX_ENTRIES_PER_EVENT = 300;
 
 var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note'];
 
-// Ungefärlig ruta runt Kummelnäs/Boo. Adresser utanför avvisas så att
-// felaktiga geokodningar inte hamnar på kartan.
-var BOUNDS = { south: 59.32, west: 18.18, north: 59.39, east: 18.36 };
+// Ungefärlig ruta runt Boo (Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil m.fl.).
+// Adresser utanför avvisas så att felaktiga geokodningar inte hamnar på kartan.
+var BOUNDS = { south: 59.29, west: 18.15, north: 59.39, east: 18.38 };
 
 var MAX_LENGTH = { address: 120, name: 60, note: 200 };
 
@@ -211,7 +211,7 @@ function resolvePosition_(address, position) {
   if (position) {
     var lat = Number(position.lat), lng = Number(position.lng);
     if (!isFinite(lat) || !isFinite(lng) || !insideBounds_(lat, lng)) {
-      throw userError_('out_of_bounds', 'Platsen ligger utanför Kummelnäs.');
+      throw userError_('out_of_bounds', 'Platsen ligger för långt från Kummelnäs.');
     }
     return { lat: lat, lng: lng };
   }
