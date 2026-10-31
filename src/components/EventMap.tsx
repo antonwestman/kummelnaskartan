@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import type L from 'leaflet'
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import { Circle, CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { Entry, Position } from '../lib/api'
 import { walkingDirectionsUrl } from '../lib/geo'
@@ -14,10 +14,12 @@ type Props = {
   myEntryId: string | null
   userPosition: Position | null
   locating: boolean
+  /** Visa bara närområdet: radie i meter runt användaren. */
+  radius: number | null
   selection: Selection | null
 }
 
-export function EventMap({ entries, myEntryId, userPosition, locating, selection }: Props) {
+export function EventMap({ entries, myEntryId, userPosition, locating, radius, selection }: Props) {
   const markers = useRef(new Map<string, L.Marker>())
 
   return (
@@ -48,6 +50,14 @@ export function EventMap({ entries, myEntryId, userPosition, locating, selection
           </Popup>
         </Marker>
       ))}
+      {userPosition && radius && (
+        <Circle
+          center={[userPosition.lat, userPosition.lng]}
+          radius={radius}
+          pathOptions={{ color: '#ff8a2a', weight: 1.5, dashArray: '4 6', fillColor: '#ff8a2a', fillOpacity: 0.06 }}
+          interactive={false}
+        />
+      )}
       {userPosition && (
         <CircleMarker
           center={[userPosition.lat, userPosition.lng]}
@@ -56,7 +66,8 @@ export function EventMap({ entries, myEntryId, userPosition, locating, selection
         />
       )}
       <FitToEntriesOnce entries={entries} />
-      {locating && userPosition && <FlyToOnce position={userPosition} />}
+      {locating && userPosition && !radius && <FlyToOnce position={userPosition} />}
+      {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
       {selection && <FocusSelection selection={selection} markers={markers} />}
     </MapContainer>
   )
@@ -91,6 +102,18 @@ function FlyToOnce({ position }: { position: Position }) {
     done.current = true
     map.flyTo([position.lat, position.lng], Math.max(map.getZoom(), 17))
   }, [position, map])
+  return null
+}
+
+/** Zooma så att hela cirkeln syns – en gång per vald radie. */
+function FitToRadiusOnce({ center, radius }: { center: Position; radius: number }) {
+  const map = useMap()
+  const done = useRef(false)
+  useEffect(() => {
+    if (done.current) return
+    done.current = true
+    map.flyToBounds(L.latLng(center.lat, center.lng).toBounds(radius * 2), { padding: [16, 16] })
+  }, [center, radius, map])
   return null
 }
 

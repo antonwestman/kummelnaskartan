@@ -5,7 +5,7 @@ import { findEvent, type KummelnasEvent } from '../events'
 import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry } from '../lib/api'
-import { sortByDistance } from '../lib/geo'
+import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { useMyEntryRef } from '../lib/myEntry'
 import { EntryList } from './EntryList'
 import { EventMap, type Selection } from './EventMap'
@@ -19,12 +19,15 @@ export function EventPage() {
   return <EventView key={event.id} event={event} />
 }
 
+const RADII = [300, 500, 1000] as const
+
 function EventView({ event }: { event: KummelnasEvent }) {
   const configured = SCRIPT_URL !== ''
   const { state, reload, upsert, remove } = useEntries(event.id, configured)
   const [myRef, setMyRef] = useMyEntryRef(event.id)
   const [locating, setLocating] = useState(false)
   const geo = useGeolocation(locating)
+  const [radius, setRadius] = useState<number | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const mapRef = useRef<HTMLElement>(null)
   const signupRef = useRef<HTMLElement>(null)
@@ -32,7 +35,20 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const entries = state.status === 'ready' ? state.entries : []
   const myEntry = myRef ? entries.find((e) => e.id === myRef.entryId) : undefined
   const userPosition = geo.status === 'on' ? geo.position : null
-  const sortedEntries = sortByDistance(entries, userPosition)
+  // Radien gäller först när positionen är känd.
+  const activeRadius = userPosition ? radius : null
+  const nearbyEntries = userPosition && activeRadius ? withinRadius(entries, userPosition, activeRadius) : entries
+  const sortedEntries = sortByDistance(nearbyEntries, userPosition)
+
+  const chooseRadius = (value: number | null) => {
+    setRadius(value)
+    if (value) setLocating(true)
+  }
+
+  const toggleLocating = () => {
+    if (locating) setRadius(null)
+    setLocating(!locating)
+  }
 
   const showOnMap = (entry: Entry) => {
     setSelection({ id: entry.id, position: entry })
@@ -56,12 +72,25 @@ function EventView({ event }: { event: KummelnasEvent }) {
           myEntryId={myEntry?.id ?? null}
           userPosition={userPosition}
           locating={locating}
+          radius={activeRadius}
           selection={selection}
         />
+        <div className="radius" role="group" aria-label="Visa hus inom">
+          {[null, ...RADII].map((value) => (
+            <button
+              key={value ?? 'all'}
+              type="button"
+              aria-pressed={radius === value}
+              onClick={() => chooseRadius(value)}
+            >
+              {value ? formatDistance(value) : 'Alla'}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           className={`locate${locating ? ' active' : ''}`}
-          onClick={() => setLocating((on) => !on)}
+          onClick={toggleLocating}
           aria-pressed={locating}
           aria-label={locating ? 'Sluta visa min position' : 'Visa min position'}
           title="Min position"
@@ -69,6 +98,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
           <LocateIcon />
         </button>
         {geo.status === 'error' && <p className="map-message">{geo.message}</p>}
+        {radius && geo.status === 'pending' && <p className="map-message">Letar efter din position…</p>}
       </section>
 
       <div className="side-pane">
@@ -106,6 +136,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
               entries={sortedEntries}
               myEntryId={myEntry?.id ?? null}
               userPosition={userPosition}
+              radius={activeRadius}
               loading={state.status === 'loading'}
               onShow={showOnMap}
             />
