@@ -4,7 +4,7 @@ import { ApiError, type EntryInput } from '../lib/api'
 import { SignupForm } from './SignupForm'
 
 function renderForm(onSubmit: (input: EntryInput) => Promise<void>) {
-  render(<SignupForm emoji="🎃" notePlaceholder="" submitLabel="Lägg till på kartan" onSubmit={onSubmit} />)
+  render(<SignupForm notePlaceholder="" submitLabel="Lägg till på kartan" onSubmit={onSubmit} />)
 }
 
 it('submits address, name and note', async () => {
@@ -40,7 +40,7 @@ it('requires a pin when the user chooses to mark the house manually', async () =
   })
 
   await userEvent.type(screen.getByLabelText('Adress'), 'Stugan bakom ladan')
-  await userEvent.click(screen.getByRole('button', { name: 'Markera huset på kartan själv' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Sätt ut huset på kartan i stället' }))
   await userEvent.click(screen.getByRole('button', { name: 'Lägg till på kartan' }))
 
   expect(screen.getByRole('alert')).toHaveTextContent('Tryck på kartan där ditt hus ligger.')

@@ -3,59 +3,50 @@ import { EVENTS, sortEvents } from '../events'
 
 const today = () => new Date().toLocaleDateString('sv-SE')
 
+const dayAndMonth = (isoDate: string) => {
+  const date = new Date(`${isoDate}T12:00:00`)
+  return {
+    day: date.getDate(),
+    month: date.toLocaleDateString('sv-SE', { month: 'short' }).replace('.', ''),
+  }
+}
+
 export function StartPage() {
   const events = sortEvents(EVENTS, today())
 
   return (
-    <main className="page narrow">
-      <header className="hero">
-        <p className="eyebrow">Kummelnäs, Nacka</p>
-        <h1>Kummelnäskartan</h1>
-        <p className="lead">
-          En gemensam karta för grannaktiviteter i Kummelnäs. Det kan vara Halloween, promenadloppisar eller annat
-          där man går runt i området.
-        </p>
-        <p>
-          Ska du vara med på ett event? Lägg in din adress, så ser andra var de kan gå. Det behövs inget konto.
-        </p>
-      </header>
+    <main className="start">
+      <h1>Kummelnäskartan</h1>
+      <p className="lead">
+        Här kan vi grannar i Kummelnäs visa var det händer något. Delar du ut godis på Halloween eller har loppis på
+        uppfarten? Sätt ut ditt hus på kartan.
+      </p>
 
-      <section aria-labelledby="events-heading">
-        <h2 id="events-heading">Event</h2>
-        <ul className="event-list">
-          {events.map((event) => {
-            const isPast = event.date < today()
-            return (
-              <li key={event.id}>
-                <Link to={`/e/${event.id}`} className={`event-card${isPast ? ' past' : ''}`}>
-                  <span className="event-emoji" aria-hidden>
-                    {event.emoji}
-                  </span>
-                  <span className="event-card-body">
-                    <span className="event-date">
-                      {event.dateLabel}
-                      {isPast && ' · har varit'}
-                    </span>
-                    <span className="event-title">{event.title}</span>
-                    <span className="event-summary">{event.summary}</span>
-                    <span className="event-cta">Öppna kartan →</span>
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+      <h2 className="section-label">På gång</h2>
+      <ul className="events">
+        {events.map((event) => {
+          const { day, month } = dayAndMonth(event.date)
+          return (
+            <li key={event.id}>
+              <Link to={`/e/${event.id}`} className={`event-row${event.date < today() ? ' past' : ''}`}>
+                <span className="event-date" aria-hidden>
+                  <span className="event-day">{day}</span>
+                  <span className="event-month">{month}</span>
+                </span>
+                <span className="event-text">
+                  <span className="event-title">{event.title}</span>
+                  <span className="muted">{event.dateLabel}</span>
+                </span>
+                <span className="chevron" aria-hidden>
+                  ›
+                </span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
 
-      <section className="how">
-        <h2>Så funkar det</h2>
-        <ol>
-          <li>Öppna kartan för eventet.</li>
-          <li>Fyll i din adress under "Anmäl ditt hus". Huset dyker upp på kartan.</li>
-          <li>Ändra eller ta bort anmälan när du vill, från samma telefon eller via din ändringslänk.</li>
-        </ol>
-        <p className="muted">Adresserna syns för alla som besöker kartan. Lägg bara in en adress du vill dela.</p>
-      </section>
+      <p className="muted small">Det du lägger in syns för alla som besöker sidan.</p>
     </main>
   )
 }

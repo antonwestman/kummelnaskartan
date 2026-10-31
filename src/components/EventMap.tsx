@@ -1,24 +1,23 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import type L from 'leaflet'
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
-import { KUMMELNAS_CENTER } from '../config'
+import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { Entry, Position } from '../lib/api'
 import { walkingDirectionsUrl } from '../lib/geo'
-import { emojiIcon } from './markerIcon'
+import { pinIcon } from './markerIcon'
 
 /** Ett nytt objekt per val, så att samma hus kan väljas igen och ändå flyga dit. */
 export type Selection = { id: string; position: Position }
 
 type Props = {
   entries: Entry[]
-  emoji: string
   myEntryId: string | null
   userPosition: Position | null
   locating: boolean
   selection: Selection | null
 }
 
-export function EventMap({ entries, emoji, myEntryId, userPosition, locating, selection }: Props) {
+export function EventMap({ entries, myEntryId, userPosition, locating, selection }: Props) {
   const markers = useRef(new Map<string, L.Marker>())
 
   return (
@@ -28,16 +27,12 @@ export function EventMap({ entries, emoji, myEntryId, userPosition, locating, se
       className="map"
       scrollWheelZoom
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={19}
-      />
+      <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={19} />
       {entries.map((entry) => (
         <Marker
           key={entry.id}
           position={[entry.lat, entry.lng]}
-          icon={emojiIcon(emoji, entry.id === myEntryId ? 'mine' : 'default')}
+          icon={pinIcon(entry.id === myEntryId ? 'mine' : 'default')}
           ref={(marker) => {
             if (marker) markers.current.set(entry.id, marker)
             else markers.current.delete(entry.id)
@@ -46,7 +41,7 @@ export function EventMap({ entries, emoji, myEntryId, userPosition, locating, se
           <Popup>
             <strong>{entry.address}</strong>
             {entry.name && <div>{entry.name}</div>}
-            {entry.note && <div className="popup-note">{entry.note}</div>}
+            {entry.note && <div className="muted">{entry.note}</div>}
             <a href={walkingDirectionsUrl(entry)} target="_blank" rel="noreferrer">
               Vägbeskrivning
             </a>
@@ -57,7 +52,7 @@ export function EventMap({ entries, emoji, myEntryId, userPosition, locating, se
         <CircleMarker
           center={[userPosition.lat, userPosition.lng]}
           radius={8}
-          pathOptions={{ color: '#fff', weight: 3, fillColor: '#2f7cf6', fillOpacity: 1 }}
+          pathOptions={{ color: '#fff', weight: 3, fillColor: '#2b6fd6', fillOpacity: 1 }}
         />
       )}
       <FitToEntriesOnce entries={entries} />

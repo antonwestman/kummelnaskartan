@@ -39,54 +39,53 @@ function EventView({ event }: { event: KummelnasEvent }) {
     mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const scrollToSignup = () => signupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
   return (
     <div className="event-layout">
       <header className="topbar">
-        <Link to="/" className="topbar-back" aria-label="Till startsidan">
-          ←
+        <Link to="/" className="topbar-home">
+          Kummelnäskartan
         </Link>
-        <div className="topbar-title">
-          <span className="topbar-event">
-            {event.emoji} {event.title}
-          </span>
-          <span className="topbar-date">{event.dateLabel}</span>
-        </div>
+        <span className="topbar-event">{event.title}</span>
       </header>
 
       <section ref={mapRef} className="map-pane" aria-label="Karta">
         <EventMap
           entries={entries}
-          emoji={event.emoji}
           myEntryId={myEntry?.id ?? null}
           userPosition={userPosition}
           locating={locating}
           selection={selection}
         />
-        <div className="map-overlay">
-          <button
-            type="button"
-            className={`map-button${locating ? ' active' : ''}`}
-            onClick={() => setLocating((on) => !on)}
-            aria-pressed={locating}
-          >
-            {locating ? '◉ Följer dig' : '◎ Min position'}
-          </button>
-          {state.status === 'loading' && configured && <span className="map-chip">Laddar…</span>}
-        </div>
+        <button
+          type="button"
+          className={`locate${locating ? ' active' : ''}`}
+          onClick={() => setLocating((on) => !on)}
+          aria-pressed={locating}
+          aria-label={locating ? 'Sluta visa min position' : 'Visa min position'}
+          title="Min position"
+        >
+          <LocateIcon />
+        </button>
         {geo.status === 'error' && <p className="map-message">{geo.message}</p>}
       </section>
 
       <div className="side-pane">
         <section className="intro">
-          <p className="lead">{event.summary}</p>
-          <details>
-            <summary>Bra att veta</summary>
-            <ul>
-              {event.details.map((d) => (
-                <li key={d}>{d}</li>
-              ))}
-            </ul>
-          </details>
+          <h1>{event.title}</h1>
+          <p className="muted">{event.dateLabel}</p>
+          <p>{event.summary}</p>
+          {event.details.map((d) => (
+            <p key={d} className="muted small">
+              {d}
+            </p>
+          ))}
+          {configured && state.status === 'ready' && !myEntry && (
+            <button type="button" className="button primary" onClick={scrollToSignup}>
+              Lägg till ditt hus
+            </button>
+          )}
         </section>
 
         {!configured ? (
@@ -95,15 +94,23 @@ function EventView({ event }: { event: KummelnasEvent }) {
             <code>src/config.ts</code> (se README).
           </p>
         ) : state.status === 'error' ? (
-          <div className="notice error" role="alert">
+          <div className="notice" role="alert">
             <p>{state.message}</p>
-            <button type="button" className="button secondary" onClick={reload}>
+            <button type="button" className="button" onClick={reload}>
               Försök igen
             </button>
           </div>
         ) : (
           <>
-            <section ref={signupRef} className="card" aria-labelledby="signup-heading">
+            <EntryList
+              entries={sortedEntries}
+              myEntryId={myEntry?.id ?? null}
+              userPosition={userPosition}
+              loading={state.status === 'loading'}
+              onShow={showOnMap}
+            />
+
+            <section ref={signupRef} className="signup" aria-labelledby="signup-heading">
               <MySignup
                 event={event}
                 myRef={myRef}
@@ -118,30 +125,21 @@ function EventView({ event }: { event: KummelnasEvent }) {
                   remove(id)
                   setMyRef(null)
                 }}
-                onForget={() => setMyRef(null)}
               />
             </section>
-
-            <EntryList
-              entries={sortedEntries}
-              myEntryId={myEntry?.id ?? null}
-              userPosition={userPosition}
-              loading={state.status === 'loading'}
-              onShow={showOnMap}
-            />
           </>
         )}
       </div>
-
-      {configured && state.status === 'ready' && !myEntry && (
-        <button
-          type="button"
-          className="fab"
-          onClick={() => signupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        >
-          {event.emoji} Anmäl ditt hus
-        </button>
-      )}
     </div>
+  )
+}
+
+function LocateIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeLinecap="round" />
+    </svg>
   )
 }
