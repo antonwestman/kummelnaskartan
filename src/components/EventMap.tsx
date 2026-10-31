@@ -34,7 +34,8 @@ export function EventMap({ entries, myEntryId, userPosition, locating, radius, s
         <Marker
           key={entry.id}
           position={[entry.lat, entry.lng]}
-          icon={pinIcon(entry.id === myEntryId ? 'mine' : 'default')}
+          icon={pinIcon(entry.paused ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
+          zIndexOffset={entry.paused ? -1000 : 0}
           ref={(marker) => {
             if (marker) markers.current.set(entry.id, marker)
             else markers.current.delete(entry.id)
@@ -42,6 +43,7 @@ export function EventMap({ entries, myEntryId, userPosition, locating, radius, s
         >
           <Popup>
             <strong>{entry.address}</strong>
+            {entry.paused && <div className="muted">Släckt</div>}
             {entry.name && <div>{entry.name}</div>}
             {entry.note && <div className="muted">{entry.note}</div>}
             <a href={walkingDirectionsUrl(entry)} target="_blank" rel="noreferrer">

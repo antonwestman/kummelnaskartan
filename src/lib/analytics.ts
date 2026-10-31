@@ -43,6 +43,8 @@ export type AnalyticsEvent =
   | 'hus-tillagt'
   | 'hus-andrat'
   | 'hus-borttaget'
+  | 'hus-slackt'
+  | 'hus-tant'
   | 'min-position'
   | 'avstand-300m'
   | 'avstand-500m'

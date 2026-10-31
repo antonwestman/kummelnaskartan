@@ -61,7 +61,9 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const searchedEntries = entries.filter((entry) => matchesQuery(entry, query))
   const nearbyEntries =
     userPosition && activeRadius ? withinRadius(searchedEntries, userPosition, activeRadius) : searchedEntries
-  const sortedEntries = userPosition ? sortByDistance(nearbyEntries, userPosition) : sortByAddress(nearbyEntries)
+  const ordered = userPosition ? sortByDistance(nearbyEntries, userPosition) : sortByAddress(nearbyEntries)
+  // Släckta hus sist, men i samma ordning sinsemellan.
+  const sortedEntries = [...ordered.filter((e) => !e.paused), ...ordered.filter((e) => e.paused)]
 
   // Nekad eller misslyckad position: visa "Alla" och en släckt knapp i stället för ett filter som inte gäller.
   const shownRadius = geoFailed ? null : radius

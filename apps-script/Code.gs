@@ -18,7 +18,8 @@ var EVENTS = {
 var MAX_CREATES_PER_MINUTE = 15;
 var MAX_ENTRIES_PER_EVENT = 300;
 
-var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note'];
+// 'paused' = huset är släckt (syns grått på kartan). Kolumnen läggs till automatiskt i befintliga flikar.
+var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused'];
 
 // Ungefärlig ruta runt Boo (Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil m.fl.).
 // Adresser utanför avvisas så att felaktiga geokodningar inte hamnar på kartan.
@@ -54,6 +55,7 @@ function doPost(e) {
         case 'create': return create_(sheet, body);
         case 'update': return update_(sheet, body);
         case 'delete': return remove_(sheet, body);
+        case 'setPaused': return setPaused_(sheet, body);
         default: throw userError_('bad_request', 'Okänd åtgärd.');
       }
     } finally {
@@ -88,7 +90,8 @@ function create_(sheet, body) {
     lat: position.lat,
     lng: position.lng,
     name: fields.name,
-    note: fields.note
+    note: fields.note,
+    paused: false
   };
   sheet.appendRow(HEADERS.map(function (h) { return entry[h]; }));
   return { ok: true, entry: publicEntry_(entry), token: entry.token };
@@ -109,9 +112,23 @@ function update_(sheet, body) {
   entry.lng = position.lng;
   entry.name = fields.name;
   entry.note = fields.note;
-  sheet.getRange(row.rowNumber, 1, 1, HEADERS.length)
-    .setValues([HEADERS.map(function (h) { return entry[h]; })]);
+  writeRow_(sheet, row.rowNumber, entry);
   return { ok: true, entry: publicEntry_(entry) };
+}
+
+/** Släck eller tänd sitt hus. Går alltid, även när anmälan har stängt. */
+function setPaused_(sheet, body) {
+  var row = findByToken_(sheet, body.token);
+  var entry = row.entry;
+  entry.paused = body.paused === true;
+  entry.updatedAt = new Date().toISOString();
+  writeRow_(sheet, row.rowNumber, entry);
+  return { ok: true, entry: publicEntry_(entry) };
+}
+
+function writeRow_(sheet, rowNumber, entry) {
+  sheet.getRange(rowNumber, 1, 1, HEADERS.length)
+    .setValues([HEADERS.map(function (h) { return entry[h]; })]);
 }
 
 function remove_(sheet, body) {
@@ -150,7 +167,12 @@ function getEventSheet_(eventId) {
   }
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(eventId);
   if (!sheet) throw userError_('unknown_event', 'Eventet finns inte.');
-  if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADERS);
+  } else if (sheet.getRange(1, HEADERS.length).getValue() !== HEADERS[HEADERS.length - 1]) {
+    // Äldre flik utan de senaste kolumnerna: skriv om rubrikraden (datan påverkas inte).
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  }
   return sheet;
 }
 
@@ -164,6 +186,7 @@ function readRows_(sheet) {
       entry.lat = Number(entry.lat);
       entry.lng = Number(entry.lng);
       entry.updatedAt = String(entry.updatedAt);
+      entry.paused = entry.paused === true || String(entry.paused).toUpperCase() === 'TRUE';
       return entry;
     })
     .filter(function (entry) { return entry.id && isFinite(entry.lat) && isFinite(entry.lng); });
@@ -216,6 +239,7 @@ function publicEntry_(entry) {
     lng: entry.lng,
     name: String(entry.name || ''),
     note: String(entry.note || ''),
+    paused: entry.paused === true,
     updatedAt: String(entry.updatedAt)
   };
 }

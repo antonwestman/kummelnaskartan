@@ -1,10 +1,11 @@
 import L from 'leaflet'
 
-export type PinVariant = 'default' | 'mine'
+export type PinVariant = 'default' | 'mine' | 'off'
 
 const icons: Record<PinVariant, L.DivIcon> = {
   default: makeIcon('default'),
   mine: makeIcon('mine'),
+  off: makeIcon('off'),
 }
 
 function makeIcon(variant: PinVariant): L.DivIcon {

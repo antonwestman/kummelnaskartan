@@ -16,7 +16,7 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
   return (
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" className="section-label">
-        {loading ? 'Hus' : `${entries.length} hus`}
+        {loading ? 'Hus' : `${entries.filter((e) => !e.paused).length} hus`}
         {radius ? ` inom ${formatDistance(radius)}` : userPosition && ' · närmast först'}
       </h2>
       <input
@@ -41,11 +41,12 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
       <ul className="entries">
         {entries.map((entry) => (
           <li key={entry.id}>
-            <button type="button" className="entry" onClick={() => onShow(entry)}>
+            <button type="button" className={`entry${entry.paused ? ' off' : ''}`} onClick={() => onShow(entry)}>
               <span className="entry-text">
                 <span className="entry-address">
                   {entry.address}
                   {entry.id === myEntryId && <span className="muted"> (du)</span>}
+                  {entry.paused && <span className="muted"> · släckt</span>}
                 </span>
                 {(entry.name || entry.note) && (
                   <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>

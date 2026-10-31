@@ -8,6 +8,8 @@ const EntrySchema = z.object({
   lng: z.number(),
   name: z.string(),
   note: z.string(),
+  /** Släckt hus: syns grått och sist. Saknas i svar från äldre skript. */
+  paused: z.boolean().optional().transform((paused) => paused ?? false),
   updatedAt: z.string(),
 })
 
@@ -108,6 +110,11 @@ export async function updateEntry(eventId: string, token: string, input: EntryIn
 
 export async function deleteEntry(eventId: string, token: string): Promise<void> {
   await post(OkSchema, { action: 'delete', event: eventId, token })
+}
+
+export async function setPaused(eventId: string, token: string, paused: boolean): Promise<Entry> {
+  const data = await post(EntryResponseSchema, { action: 'setPaused', event: eventId, token, paused })
+  return data.entry
 }
 
 export async function lookupEntry(eventId: string, token: string): Promise<Entry> {
