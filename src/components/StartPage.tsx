@@ -46,7 +46,10 @@ export function StartPage() {
         })}
       </ul>
 
-      <p className="muted small">Det du lägger in syns för alla som besöker sidan.</p>
+      <p className="muted small">
+        För Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil och resten av Saltsjö-Boo. Det du lägger in syns för
+        alla som besöker sidan.
+      </p>
     </main>
   )
 }
