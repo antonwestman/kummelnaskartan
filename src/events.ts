@@ -16,7 +16,7 @@ export const EVENTS: KummelnasEvent[] = [
     title: 'Trick or treat',
     date: '2026-10-31',
     dateLabel: 'Lördag 31 oktober',
-    summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som delar ut godis.',
+    summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som öppnat upp för bus eller godis.',
     details: ['Glöm inte reflexer.'],
     notePlaceholder: 'Öppet 17–19',
   },
