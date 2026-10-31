@@ -5,7 +5,6 @@ export type KummelnasEvent = {
   /** ISO-datum, används för att sortera och avgöra om eventet passerat. */
   date: string
   dateLabel: string
-  emoji: string
   summary: string
   details: string[]
   notePlaceholder: string
@@ -14,18 +13,12 @@ export type KummelnasEvent = {
 export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
-    title: 'Trick or treat – Kummelnäs',
+    title: 'Trick or treat',
     date: '2026-10-31',
     dateLabel: 'Lördag 31 oktober',
-    emoji: '🎃',
-    summary:
-      'Lyser det en pumpa utanför är det öppet att knacka på. Kartan gör det lättare att planera rundan.',
-    details: [
-      'Har du en tänd pumpa utanför dörren är det fritt fram att knacka på – även om du inte står på kartan.',
-      'Lägg in din adress om du delar ut godis, så hittar barnen dit lättare.',
-      'Tänk på reflexer och ficklampa – det är mörkt i Kummelnäs.',
-    ],
-    notePlaceholder: 't.ex. "Öppet 17–19" eller "Har nötfritt godis"',
+    summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som delar ut godis.',
+    details: ['Glöm inte reflexer.'],
+    notePlaceholder: 'Öppet 17–19',
   },
 ]
 

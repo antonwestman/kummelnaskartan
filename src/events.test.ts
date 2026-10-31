@@ -5,7 +5,6 @@ const event = (id: string, date: string): KummelnasEvent => ({
   date,
   title: id,
   dateLabel: date,
-  emoji: '🎃',
   summary: '',
   details: [],
   notePlaceholder: '',

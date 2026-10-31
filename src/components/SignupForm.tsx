@@ -5,7 +5,6 @@ import { PositionPicker } from './PositionPicker'
 export type SignupValues = { address: string; name: string; note: string }
 
 type Props = {
-  emoji: string
   notePlaceholder: string
   initialValues?: SignupValues
   submitLabel: string
@@ -18,7 +17,7 @@ type Status = { kind: 'idle' } | { kind: 'submitting' } | { kind: 'error'; messa
 
 const EMPTY: SignupValues = { address: '', name: '', note: '' }
 
-export function SignupForm({ emoji, notePlaceholder, initialValues = EMPTY, submitLabel, onSubmit, onCancel }: Props) {
+export function SignupForm({ notePlaceholder, initialValues = EMPTY, submitLabel, onSubmit, onCancel }: Props) {
   const id = useId()
   const [values, setValues] = useState(initialValues)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
@@ -57,7 +56,7 @@ export function SignupForm({ emoji, notePlaceholder, initialValues = EMPTY, subm
         required
         maxLength={120}
         autoComplete="street-address"
-        placeholder="t.ex. Kummelnäsvägen 12"
+        placeholder="Kummelnäsvägen 12"
         value={values.address}
         onChange={set('address')}
       />
@@ -70,7 +69,7 @@ export function SignupForm({ emoji, notePlaceholder, initialValues = EMPTY, subm
         name="name"
         maxLength={60}
         autoComplete="family-name"
-        placeholder="t.ex. Familjen Andersson"
+        placeholder="Familjen Andersson"
         value={values.name}
         onChange={set('name')}
       />
@@ -90,7 +89,7 @@ export function SignupForm({ emoji, notePlaceholder, initialValues = EMPTY, subm
       {picking ? (
         <div className="picker">
           <p>Tryck på kartan där ditt hus ligger.</p>
-          <PositionPicker emoji={emoji} value={position} onChange={setPosition} />
+          <PositionPicker value={position} onChange={setPosition} />
           <button
             type="button"
             className="link-button"
@@ -99,14 +98,16 @@ export function SignupForm({ emoji, notePlaceholder, initialValues = EMPTY, subm
               setPosition(null)
             }}
           >
-            Försök hitta adressen automatiskt i stället
+            Använd adressen i stället
           </button>
         </div>
       ) : (
         <button type="button" className="link-button" onClick={() => setPicking(true)}>
-          Markera huset på kartan själv
+          Sätt ut huset på kartan i stället
         </button>
       )}
+
+      <p className="muted small">Adressen syns för alla som besöker sidan.</p>
 
       {status.kind === 'error' && (
         <p className="form-error" role="alert">
@@ -114,14 +115,13 @@ export function SignupForm({ emoji, notePlaceholder, initialValues = EMPTY, subm
         </p>
       )}
 
-      <p className="muted small">Adressen syns för alla som besöker kartan.</p>
 
       <div className="form-actions">
         <button type="submit" className="button primary" disabled={submitting}>
           {submitting ? 'Sparar…' : submitLabel}
         </button>
         {onCancel && (
-          <button type="button" className="button secondary" onClick={onCancel} disabled={submitting}>
+          <button type="button" className="button" onClick={onCancel} disabled={submitting}>
             Avbryt
           </button>
         )}

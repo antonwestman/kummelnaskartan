@@ -11,16 +11,15 @@ type Props = {
   entriesLoaded: boolean
   onSaved: (entry: Entry, token: string) => void
   onDeleted: (id: string) => void
-  onForget: () => void
 }
 
-export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDeleted, onForget }: Props) {
+export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDeleted }: Props) {
   const [editing, setEditing] = useState(false)
 
   if (!entriesLoaded) {
     return (
       <>
-        <h2 id="signup-heading">Anmäl ditt hus</h2>
+        <h2 id="signup-heading">Lägg till ditt hus</h2>
         <p className="muted">Laddar…</p>
       </>
     )
@@ -29,10 +28,9 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
   if (!myRef || !myEntry) {
     return (
       <>
-        <h2 id="signup-heading">Anmäl ditt hus</h2>
-        {myRef && <p className="muted">Din tidigare anmälan finns inte längre. Du kan anmäla dig igen.</p>}
+        <h2 id="signup-heading">Lägg till ditt hus</h2>
+        {myRef && <p className="muted">Ditt hus finns inte längre på kartan.</p>}
         <SignupForm
-          emoji={event.emoji}
           notePlaceholder={event.notePlaceholder}
           submitLabel="Lägg till på kartan"
           onSubmit={async (input) => {
@@ -47,9 +45,8 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
   if (editing) {
     return (
       <>
-        <h2 id="signup-heading">Ändra din anmälan</h2>
+        <h2 id="signup-heading">Ändra</h2>
         <SignupForm
-          emoji={event.emoji}
           notePlaceholder={event.notePlaceholder}
           initialValues={{ address: myEntry.address, name: myEntry.name, note: myEntry.note }}
           submitLabel="Spara ändringar"
@@ -71,7 +68,6 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
       token={myRef.token}
       onEdit={() => setEditing(true)}
       onDeleted={() => onDeleted(myEntry.id)}
-      onForget={onForget}
     />
   )
 }
@@ -82,14 +78,12 @@ function MyEntrySummary({
   token,
   onEdit,
   onDeleted,
-  onForget,
 }: {
   event: KummelnasEvent
   entry: Entry
   token: string
   onEdit: () => void
   onDeleted: () => void
-  onForget: () => void
 }) {
   const [deleteState, setDeleteState] = useState<
     { kind: 'idle' } | { kind: 'deleting' } | { kind: 'error'; message: string }
@@ -114,7 +108,7 @@ function MyEntrySummary({
   const handleShareLink = async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Ändra min anmälan – Kummelnäskartan', url: link })
+        await navigator.share({ title: 'Ändra mitt hus på Kummelnäskartan', url: link })
       } else {
         await navigator.clipboard.writeText(link)
         setCopied(true)
@@ -126,14 +120,13 @@ function MyEntrySummary({
 
   return (
     <>
-      <h2 id="signup-heading">Du är med på kartan {event.emoji}</h2>
+      <h2 id="signup-heading">Du är med på kartan</h2>
       <p className="my-entry">
         <strong>{entry.address}</strong>
-        {entry.name && <> · {entry.name}</>}
-        {entry.note && <span className="entry-note">{entry.note}</span>}
+        {(entry.name || entry.note) && <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>}
       </p>
       <div className="form-actions">
-        <button type="button" className="button secondary" onClick={onEdit}>
+        <button type="button" className="button" onClick={onEdit}>
           Ändra
         </button>
         <button
@@ -151,18 +144,15 @@ function MyEntrySummary({
         </p>
       )}
       <details className="edit-link">
-        <summary>Ändra från en annan telefon eller dator</summary>
+        <summary>Ändra från en annan telefon</summary>
         <p className="muted small">
-          Din anmälan är sparad i den här webbläsaren. Spara länken nedan om du vill kunna ändra den någon annanstans.
-          Dela den inte med andra.
+          Den här telefonen kommer ihåg ditt hus. Spara länken om du vill kunna ändra från en annan. Dela den inte, den
+          som har länken kan ändra.
         </p>
         <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Ändringslänk" />
         <div className="form-actions">
-          <button type="button" className="button secondary small" onClick={handleShareLink}>
-            {copied ? 'Kopierad!' : 'Spara/dela länk'}
-          </button>
-          <button type="button" className="link-button" onClick={onForget}>
-            Glöm anmälan på den här enheten
+          <button type="button" className="button small" onClick={handleShareLink}>
+            {copied ? 'Kopierad' : 'Dela länken'}
           </button>
         </div>
       </details>

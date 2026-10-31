@@ -8,3 +8,10 @@ export const SCRIPT_URL: string =
 
 /** Mittpunkt för kartan när inga anmälningar finns. */
 export const KUMMELNAS_CENTER = { lat: 59.3545, lng: 18.2685 } as const
+
+/** Mörk bakgrundskarta (CARTO Dark Matter, bygger på OpenStreetMap). */
+export const MAP_TILES = {
+  url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+} as const
