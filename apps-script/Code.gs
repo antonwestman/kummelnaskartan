@@ -65,6 +65,7 @@ function create_(sheet, body) {
   }
   checkRateLimit_(body.event);
   var fields = cleanFields_(body);
+  rejectDuplicate_(sheet, fields.address, null);
   var position = resolvePosition_(fields.address, body.position);
   var now = new Date().toISOString();
   var entry = {
@@ -85,6 +86,7 @@ function create_(sheet, body) {
 function update_(sheet, body) {
   var row = findByToken_(sheet, body.token);
   var fields = cleanFields_(body);
+  rejectDuplicate_(sheet, fields.address, row.entry.id);
   var position = fields.address === row.entry.address && !body.position
     ? { lat: row.entry.lat, lng: row.entry.lng }
     : resolvePosition_(fields.address, body.position);
@@ -185,6 +187,34 @@ function publicEntry_(entry) {
     note: String(entry.note || ''),
     updatedAt: String(entry.updatedAt)
   };
+}
+
+/**
+ * Samma adress får bara finnas en gång per event. Jämför en förenklad form så att
+ * "Kummelnäsvägen 12 A, Saltsjö-Boo" och "kummelnäsvägen 12a" räknas som samma hus.
+ */
+function rejectDuplicate_(sheet, address, ownId) {
+  var key = normalizeAddress_(address);
+  var taken = readRows_(sheet).some(function (entry) {
+    return entry.id !== ownId && normalizeAddress_(entry.address) === key;
+  });
+  if (taken) {
+    throw userError_(
+      'duplicate',
+      'Det här huset finns redan på kartan. Har du lagt in det från en annan telefon kan du ändra det därifrån.'
+    );
+  }
+}
+
+function normalizeAddress_(address) {
+  return String(address)
+    .toLowerCase()
+    .replace(/\b\d{3}\s?\d{2}\b/g, ' ') // postnummer
+    .replace(/saltsjö-?\s?boo|nacka|sverige|sweden/g, ' ')
+    .replace(/[^a-z0-9åäöéü]+/g, ' ')
+    .replace(/(\d)\s+([a-zåäö])(?![a-zåäö])/g, '$1$2') // "12 A" -> "12a"
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function cleanFields_(body) {
