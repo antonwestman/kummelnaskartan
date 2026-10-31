@@ -250,8 +250,9 @@ code {
   z-index: 500;
   left: 12px;
   right: 12px;
-  top: 12px;
+  bottom: 84px;
   padding: 8px 12px;
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   font-size: 0.9rem;
