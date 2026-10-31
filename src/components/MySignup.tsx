@@ -3,6 +3,7 @@ import type { KummelnasEvent } from '../events'
 import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry, type Signup } from '../lib/api'
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
+import { displayAddress } from '../lib/address'
 import { SignupForm } from './SignupForm'
 
 type Props = {
@@ -182,7 +183,7 @@ function MyEntrySummary({
     <>
       <h2 id="signup-heading">{entry.paused ? 'Ditt hus är släckt' : 'Du är med på kartan'}</h2>
       <p className="my-entry">
-        <strong>{entry.address}</strong>
+        <strong>{displayAddress(entry.address)}</strong>
         {(entry.name || entry.note) && <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>}
       </p>
       <p className="muted small">

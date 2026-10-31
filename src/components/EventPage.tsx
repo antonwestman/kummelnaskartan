@@ -105,6 +105,26 @@ function EventView({ event }: { event: KummelnasEvent }) {
     mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const signupSection = (
+    <section ref={signupRef} className="signup" aria-labelledby="signup-heading">
+      <MySignup
+        event={event}
+        myRef={myRef}
+        myEntry={myEntry}
+        signup={state.status === 'ready' ? state.signup : null}
+        onSaved={(entry, token) => {
+          upsert(entry)
+          setMyRef({ token, entryId: entry.id })
+          setSelection({ id: entry.id, position: entry })
+        }}
+        onDeleted={(id) => {
+          remove(id)
+          setMyRef(null)
+        }}
+      />
+    </section>
+  )
+
   const scrollToSignup = () => signupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   return (
@@ -182,6 +202,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
           </div>
         ) : (
           <>
+            {/* Har man redan ett hus ligger "Ditt hus" överst, så att Släck/Ändra inte hamnar under en lång lista. */}
+            {myEntry && signupSection}
             <EntryList
               entries={sortedEntries}
               myEntryId={myEntry?.id ?? null}
@@ -193,23 +215,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
               onShow={showOnMap}
             />
 
-            <section ref={signupRef} className="signup" aria-labelledby="signup-heading">
-              <MySignup
-                event={event}
-                myRef={myRef}
-                myEntry={myEntry}
-                signup={state.status === 'ready' ? state.signup : null}
-                onSaved={(entry, token) => {
-                  upsert(entry)
-                  setMyRef({ token, entryId: entry.id })
-                  setSelection({ id: entry.id, position: entry })
-                }}
-                onDeleted={(id) => {
-                  remove(id)
-                  setMyRef(null)
-                }}
-              />
-            </section>
+            {!myEntry && signupSection}
           </>
         )}
       </div>
