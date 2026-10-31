@@ -6,6 +6,7 @@ import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry } from '../lib/api'
 import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
+import { matchesQuery, sortByAddress } from '../lib/search'
 import { useMyEntryRef } from '../lib/myEntry'
 import { eventSeo } from '../seo'
 import { EntryList } from './EntryList'
@@ -39,6 +40,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const geo = useGeolocation(locating, locateAttempt)
   const geoFailed = geo.status === 'error'
   const [radius, setRadius] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
   const [selection, setSelection] = useState<Selection | null>(null)
   const mapRef = useRef<HTMLElement>(null)
   const signupRef = useRef<HTMLElement>(null)
@@ -48,8 +50,11 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const userPosition = geo.status === 'on' ? geo.position : null
   // Radien gäller först när positionen är känd.
   const activeRadius = userPosition ? radius : null
-  const nearbyEntries = userPosition && activeRadius ? withinRadius(entries, userPosition, activeRadius) : entries
-  const sortedEntries = sortByDistance(nearbyEntries, userPosition)
+  // Sökningen gäller både kartan och listan; avståndet bara listan (kartan visar cirkeln).
+  const searchedEntries = entries.filter((entry) => matchesQuery(entry, query))
+  const nearbyEntries =
+    userPosition && activeRadius ? withinRadius(searchedEntries, userPosition, activeRadius) : searchedEntries
+  const sortedEntries = userPosition ? sortByDistance(nearbyEntries, userPosition) : sortByAddress(nearbyEntries)
 
   // Nekad eller misslyckad position: visa "Alla" och en släckt knapp i stället för ett filter som inte gäller.
   const shownRadius = geoFailed ? null : radius
@@ -92,7 +97,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
 
       <section ref={mapRef} className="map-pane" aria-label="Karta">
         <EventMap
-          entries={entries}
+          entries={searchedEntries}
           myEntryId={myEntry?.id ?? null}
           userPosition={userPosition}
           locating={locating}
@@ -161,6 +166,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
               myEntryId={myEntry?.id ?? null}
               userPosition={userPosition}
               radius={activeRadius}
+              query={query}
+              onQueryChange={setQuery}
               loading={state.status === 'loading'}
               onShow={showOnMap}
             />
