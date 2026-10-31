@@ -159,7 +159,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
               {d}
             </p>
           ))}
-          {configured && state.status === 'ready' && !myEntry && (
+          {configured && state.status === 'ready' && state.signup.status === 'open' && !myEntry && (
             <button type="button" className="button primary" onClick={scrollToSignup}>
               Lägg till ditt hus
             </button>
@@ -196,7 +196,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
                 event={event}
                 myRef={myRef}
                 myEntry={myEntry}
-                entriesLoaded={state.status === 'ready'}
+                signup={state.status === 'ready' ? state.signup : null}
                 onSaved={(entry, token) => {
                   upsert(entry)
                   setMyRef({ token, entryId: entry.id })

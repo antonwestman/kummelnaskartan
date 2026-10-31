@@ -33,7 +33,7 @@ export function siteSeo(): PageSeo {
 }
 
 export function eventSeo(event: KummelnasEvent): PageSeo {
-  const year = event.date.slice(0, 4)
+  const year = event.startsAt.slice(0, 4)
   const url = SITE_URL + eventPath(event.id)
   const description = `${event.summary} ${event.dateLabel} i ${areaList}, Saltsjö-Boo.`
   return {
@@ -44,8 +44,8 @@ export function eventSeo(event: KummelnasEvent): PageSeo {
       '@context': 'https://schema.org',
       '@type': 'Event',
       name: `${event.title} i Kummelnäs ${year}`,
-      startDate: event.date,
-      endDate: event.date,
+      startDate: event.startsAt,
+      endDate: event.endsAt,
       eventStatus: 'https://schema.org/EventScheduled',
       eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
       isAccessibleForFree: true,

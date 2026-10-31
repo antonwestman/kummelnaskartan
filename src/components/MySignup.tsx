@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { KummelnasEvent } from '../events'
-import { ApiError, createEntry, deleteEntry, updateEntry, type Entry } from '../lib/api'
+import { ApiError, createEntry, deleteEntry, updateEntry, type Entry, type Signup } from '../lib/api'
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { SignupForm } from './SignupForm'
@@ -9,21 +9,28 @@ type Props = {
   event: KummelnasEvent
   myRef: MyEntryRef | null
   myEntry: Entry | undefined
-  entriesLoaded: boolean
+  /** null = laddar fortfarande. */
+  signup: Signup | null
   onSaved: (entry: Entry, token: string) => void
   onDeleted: (id: string) => void
 }
 
-export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDeleted }: Props) {
+export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: Props) {
   const [editing, setEditing] = useState(false)
 
-  if (!entriesLoaded) {
+  if (!signup) {
     return (
       <>
         <h2 id="signup-heading">Lägg till ditt hus</h2>
         <p className="muted">Laddar…</p>
       </>
     )
+  }
+
+  const open = signup.status === 'open'
+
+  if ((!myRef || !myEntry) && !open) {
+    return <SignupUnavailable signup={signup} />
   }
 
   if (!myRef || !myEntry) {
@@ -44,7 +51,7 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
     )
   }
 
-  if (editing) {
+  if (editing && open) {
     return (
       <>
         <h2 id="signup-heading">Ändra</h2>
@@ -69,9 +76,38 @@ export function MySignup({ event, myRef, myEntry, entriesLoaded, onSaved, onDele
       event={event}
       entry={myEntry}
       token={myRef.token}
-      onEdit={() => setEditing(true)}
+      onEdit={open ? () => setEditing(true) : null}
       onDeleted={() => onDeleted(myEntry.id)}
     />
+  )
+}
+
+const formatOpensAt = (iso: string) =>
+  new Date(iso).toLocaleString('sv-SE', {
+    timeZone: 'Europe/Stockholm',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+function SignupUnavailable({ signup }: { signup: Exclude<Signup, { status: 'open' }> }) {
+  if (signup.status === 'closed') {
+    return (
+      <>
+        <h2 id="signup-heading">Anmälan är stängd</h2>
+        <p className="muted">Det går inte längre att lägga till hus för det här eventet.</p>
+      </>
+    )
+  }
+  return (
+    <>
+      <h2 id="signup-heading">Lägg till ditt hus</h2>
+      <p className="muted">
+        {signup.opensAt ? `Det går att lägga till hus från ${formatOpensAt(signup.opensAt)}.` : 'Det går att lägga till hus snart.'}
+      </p>
+    </>
   )
 }
 
@@ -85,7 +121,8 @@ function MyEntrySummary({
   event: KummelnasEvent
   entry: Entry
   token: string
-  onEdit: () => void
+  /** null när anmälan är stängd – då går det bara att ta bort. */
+  onEdit: (() => void) | null
   onDeleted: () => void
 }) {
   const [deleteState, setDeleteState] = useState<
@@ -130,9 +167,11 @@ function MyEntrySummary({
         {(entry.name || entry.note) && <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>}
       </p>
       <div className="form-actions">
-        <button type="button" className="button" onClick={onEdit}>
-          Ändra
-        </button>
+        {onEdit && (
+          <button type="button" className="button" onClick={onEdit}>
+            Ändra
+          </button>
+        )}
         <button
           type="button"
           className="button danger"

@@ -6,9 +6,13 @@
  * Se README.md för installation.
  */
 
-// Endast dessa flikar räknas som event. Lägg till nya här (samma id som i src/events.ts).
-// Andra flikar i samma Sheet kan då aldrig läsas eller skrivas via webbappen.
-var EVENT_IDS = ['halloween-2026'];
+// Event som webbappen känner till (samma id som fliknamnet och som i src/events.ts), och
+// när det går att lägga till eller ändra hus. Andra flikar i Sheetet kan aldrig nås.
+// Tider anges med tidszon: +01:00 vintertid, +02:00 sommartid. null = ingen gräns åt det hållet.
+// Att ta bort sitt hus går alltid.
+var EVENTS = {
+  'halloween-2026': { signupOpensAt: null, signupClosesAt: '2026-11-01T00:00:00+01:00' }
+};
 
 // Skydd mot skräpposter. Gäller totalt för alla besökare (Apps Script ser inte IP-adresser).
 var MAX_CREATES_PER_MINUTE = 15;
@@ -26,7 +30,13 @@ function doGet(e) {
   return handle_(function () {
     var sheet = getEventSheet_(e.parameter.event);
     var entries = readRows_(sheet).map(publicEntry_);
-    return { ok: true, entries: entries };
+    var config = EVENTS[e.parameter.event];
+    return {
+      ok: true,
+      entries: entries,
+      signup: signupState_(e.parameter.event),
+      signupOpensAt: config.signupOpensAt
+    };
   });
 }
 
@@ -60,6 +70,7 @@ function lookup_(sheet, body) {
 }
 
 function create_(sheet, body) {
+  requireSignupOpen_(body.event);
   if (readRows_(sheet).length >= MAX_ENTRIES_PER_EVENT) {
     throw userError_('event_full', 'Kartan är full för det här eventet. Kontakta den som ordnar.');
   }
@@ -84,6 +95,7 @@ function create_(sheet, body) {
 }
 
 function update_(sheet, body) {
+  requireSignupOpen_(body.event);
   var row = findByToken_(sheet, body.token);
   var fields = cleanFields_(body);
   rejectDuplicate_(sheet, fields.address, row.entry.id);
@@ -133,7 +145,7 @@ function userError_(code, message) {
 
 /** Endast flikar i EVENT_IDS räknas som event – inga nya skapas via API:t. */
 function getEventSheet_(eventId) {
-  if (typeof eventId !== 'string' || EVENT_IDS.indexOf(eventId) === -1) {
+  if (typeof eventId !== 'string' || !Object.prototype.hasOwnProperty.call(EVENTS, eventId)) {
     throw userError_('unknown_event', 'Eventet finns inte.');
   }
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(eventId);
@@ -155,6 +167,25 @@ function readRows_(sheet) {
       return entry;
     })
     .filter(function (entry) { return entry.id && isFinite(entry.lat) && isFinite(entry.lng); });
+}
+
+/** 'notYetOpen' | 'open' | 'closed' utifrån EVENTS. */
+function signupState_(eventId) {
+  var config = EVENTS[eventId];
+  var now = Date.now();
+  if (config.signupOpensAt && now < Date.parse(config.signupOpensAt)) return 'notYetOpen';
+  if (config.signupClosesAt && now >= Date.parse(config.signupClosesAt)) return 'closed';
+  return 'open';
+}
+
+function requireSignupOpen_(eventId) {
+  var state = signupState_(eventId);
+  if (state === 'closed') {
+    throw userError_('signup_closed', 'Det går inte längre att lägga till eller ändra hus för det här eventet.');
+  }
+  if (state === 'notYetOpen') {
+    throw userError_('signup_not_open', 'Det går inte att lägga till hus för det här eventet än.');
+  }
 }
 
 /** Räknar nya anmälningar per minut och event. Körs inuti låset i doPost. */

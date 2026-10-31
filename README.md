@@ -38,8 +38,19 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
 ## Lägga till ett nytt event
 
 1. Lägg till en ny flik i Sheetet, t.ex. `promenadloppis-2027`.
-2. Lägg till samma id i `EVENT_IDS` överst i `apps-script/Code.gs`, klistra in i Apps Script och publicera en ny version.
-3. Lägg till eventet i `src/events.ts` med samma `id`. Eventet får automatiskt en egen sida
+2. Lägg till eventet i `EVENTS` överst i `apps-script/Code.gs` med samma id och när det går att lägga
+   in hus (`signupOpensAt`, `signupClosesAt`, med tidszon, `null` = ingen gräns). Klistra in i Apps Script
+   och publicera en ny version.
+3. Lägg till eventet i `src/events.ts` med samma `id`, `startsAt` och `endsAt`.
+
+### Tider
+
+| Var | Fält | Styr |
+|---|---|---|
+| `apps-script/Code.gs` | `signupOpensAt`, `signupClosesAt` | När man kan lägga till och ändra hus. Skriptet spärrar, sidan följer. Ta bort går alltid. |
+| `src/events.ts` | `startsAt`, `endsAt` | Om eventet listas under "På gång" eller "Tidigare event", och Event-data för Google. |
+
+Tider skrivs med tidszon: `2026-11-01T00:00:00+01:00` (vintertid) eller `+02:00` (sommartid). Eventet får automatiskt en egen sida
    (`kummelnaskartan.se/<id>/`) med titel, beskrivning och Event-data för Google, och hamnar i sitemap.xml.
 
 ## Sidor och sökmotorer

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ApiError, fetchEntries, type Entry } from '../lib/api'
+import { ApiError, fetchEntries, type Entry, type Signup } from '../lib/api'
 
 type EntriesState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; entries: Entry[] }
+  | { status: 'ready'; entries: Entry[]; signup: Signup }
 
 const REFRESH_MS = 60_000
 
@@ -17,7 +17,7 @@ export function useEntries(eventId: string, enabled: boolean) {
     let cancelled = false
     const load = () =>
       fetchEntries(eventId).then(
-        (entries) => !cancelled && setState({ status: 'ready', entries }),
+        ({ entries, signup }) => !cancelled && setState({ status: 'ready', entries, signup }),
         (err: unknown) => {
           if (cancelled) return
           const message = err instanceof ApiError ? err.message : 'Kunde inte hämta kartan.'
@@ -42,14 +42,14 @@ export function useEntries(eventId: string, enabled: boolean) {
   const upsert = useCallback((entry: Entry) => {
     setState((prev) =>
       prev.status === 'ready'
-        ? { status: 'ready', entries: [...prev.entries.filter((e) => e.id !== entry.id), entry] }
+        ? { ...prev, entries: [...prev.entries.filter((e) => e.id !== entry.id), entry] }
         : prev,
     )
   }, [])
 
   const remove = useCallback((id: string) => {
     setState((prev) =>
-      prev.status === 'ready' ? { status: 'ready', entries: prev.entries.filter((e) => e.id !== id) } : prev,
+      prev.status === 'ready' ? { ...prev, entries: prev.entries.filter((e) => e.id !== id) } : prev,
     )
   }, [])
 
