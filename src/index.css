@@ -1,0 +1,570 @@
+:root {
+  --bg: #15130f;
+  --surface: #221f19;
+  --surface-2: #2d2921;
+  --border: #3d382d;
+  --text: #f3eee4;
+  --muted: #b3aa98;
+  --accent: #f07a2a;
+  --accent-strong: #ff8f3f;
+  --accent-text: #1b1206;
+  --danger: #e5534b;
+  --radius: 14px;
+  --topbar-h: 56px;
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent-strong);
+}
+
+h1,
+h2 {
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+code {
+  background: var(--surface-2);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+/* ---------- Startsida ---------- */
+
+.page {
+  padding: 24px 16px calc(32px + env(safe-area-inset-bottom));
+}
+
+.narrow {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.hero {
+  padding: 24px 0 8px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 8vw, 3rem);
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+
+.lead {
+  font-size: 1.1rem;
+}
+
+.event-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: grid;
+  gap: 12px;
+}
+
+.event-card {
+  display: flex;
+  gap: 16px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.event-card:hover,
+.event-card:focus-visible {
+  border-color: var(--accent);
+}
+
+.event-card.past {
+  opacity: 0.6;
+}
+
+.event-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.event-card-body {
+  display: grid;
+  gap: 4px;
+}
+
+.event-date {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.event-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.event-summary {
+  color: var(--muted);
+}
+
+.event-cta {
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.how ol {
+  padding-left: 1.25em;
+}
+
+/* ---------- Eventsida (mobil först) ---------- */
+
+.event-layout {
+  min-height: 100svh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  padding-top: env(safe-area-inset-top);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-back {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.topbar-title {
+  display: grid;
+  min-width: 0;
+}
+
+.topbar-event {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.map-pane {
+  position: relative;
+  height: 62svh;
+  scroll-margin-top: var(--topbar-h);
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.map-overlay {
+  position: absolute;
+  z-index: 500;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.map-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: none;
+  background: #fff;
+  color: #1a1a1a;
+  font: inherit;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+}
+
+.map-button.active {
+  background: #2f7cf6;
+  color: #fff;
+}
+
+.map-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.65);
+  font-size: 0.85rem;
+}
+
+.map-message {
+  position: absolute;
+  z-index: 500;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.75);
+  font-size: 0.9rem;
+}
+
+.side-pane {
+  padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.intro .lead {
+  margin-top: 0;
+}
+
+details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.card {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  scroll-margin-top: calc(var(--topbar-h) + 12px);
+}
+
+.notice {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.notice.error {
+  border: 1px solid var(--danger);
+}
+
+.notice p {
+  margin-top: 0;
+}
+
+/* ---------- Formulär och knappar ---------- */
+
+.signup-form {
+  display: grid;
+  gap: 6px;
+}
+
+.signup-form label {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  /* 16px förhindrar att iOS zoomar in vid fokus. */
+  font: inherit;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  flex: 1 1 auto;
+}
+
+.button.secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.button.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.button.small {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.9rem;
+}
+
+.link-button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent-strong);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.form-error {
+  margin: 4px 0 0;
+  color: #ff9b94;
+  font-weight: 600;
+}
+
+.picker p {
+  margin: 8px 0;
+}
+
+.picker-map {
+  height: 260px;
+  border-radius: 10px;
+}
+
+.my-entry {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 4px;
+}
+
+.edit-link input {
+  margin-bottom: 4px;
+}
+
+.fab {
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  min-height: 52px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.45);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ---------- Lista ---------- */
+
+.entry-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.entry.mine {
+  border-color: var(--accent);
+}
+
+.entry-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entry-address {
+  font-weight: 700;
+}
+
+.entry-name {
+  color: var(--muted);
+}
+
+.entry-note {
+  font-style: italic;
+}
+
+.entry-distance {
+  font-weight: 600;
+  color: var(--accent-strong);
+  white-space: nowrap;
+}
+
+.entry-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+
+.badge {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
+/* ---------- Kartmarkörer ---------- */
+
+.emoji-marker {
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.5));
+}
+
+.emoji-marker.mine span,
+.emoji-marker.pick span {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgb(240 122 42 / 0.35);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.leaflet-popup-content {
+  display: grid;
+  gap: 4px;
+  font-size: 0.95rem;
+}
+
+.popup-note {
+  font-style: italic;
+}
+
+/* ---------- Större skärmar: karta till vänster, panel till höger ---------- */
+
+@media (min-width: 900px) {
+  .event-layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    grid-template-rows: var(--topbar-h) 1fr;
+    height: 100svh;
+  }
+
+  .topbar {
+    grid-column: 1 / -1;
+  }
+
+  .map-pane {
+    height: auto;
+  }
+
+  .side-pane {
+    overflow-y: auto;
+    padding-bottom: 32px;
+    border-left: 1px solid var(--border);
+  }
+
+  .fab {
+    display: none;
+  }
+}
