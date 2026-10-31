@@ -1,3 +1,4 @@
+import { displayAddress } from '../lib/address'
 import type { Entry, Position } from '../lib/api'
 import { distanceInMeters, formatDistance } from '../lib/geo'
 
@@ -44,7 +45,7 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
             <button type="button" className={`entry${entry.paused ? ' off' : ''}`} onClick={() => onShow(entry)}>
               <span className="entry-text">
                 <span className="entry-address">
-                  {entry.address}
+                  {displayAddress(entry.address)}
                   {entry.id === myEntryId && <span className="muted"> (du)</span>}
                   {entry.paused && <span className="muted"> · släckt</span>}
                 </span>

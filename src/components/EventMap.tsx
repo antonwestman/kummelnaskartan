@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 import L from 'leaflet'
 import { Circle, CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
+import { displayAddress } from '../lib/address'
 import type { Entry, Position } from '../lib/api'
 import { walkingDirectionsUrl } from '../lib/geo'
 import { pinIcon } from './markerIcon'
@@ -42,7 +43,7 @@ export function EventMap({ entries, myEntryId, userPosition, locating, radius, s
           }}
         >
           <Popup>
-            <strong>{entry.address}</strong>
+            <strong>{displayAddress(entry.address)}</strong>
             {entry.paused && <div className="muted">Släckt</div>}
             {entry.name && <div>{entry.name}</div>}
             {entry.note && <div className="muted">{entry.note}</div>}
