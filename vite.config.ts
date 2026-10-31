@@ -3,9 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  // Relativ base så att sidan fungerar både på antonwestman.github.io/kummelnaskartan/
-  // och på en egen domän.
-  base: './',
+  // Sidan ligger i roten på kummelnaskartan.se och använder riktiga sökvägar (/halloween-2026/).
+  base: '/',
   test: {
     environment: 'jsdom',
     globals: true,

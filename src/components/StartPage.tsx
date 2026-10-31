@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { EVENTS, sortEvents } from '../events'
+import { eventPath } from '../paths'
 
 const today = () => new Date().toLocaleDateString('sv-SE')
 
@@ -28,7 +29,7 @@ export function StartPage() {
           const { day, month } = dayAndMonth(event.date)
           return (
             <li key={event.id}>
-              <Link to={`/e/${event.id}`} className={`event-row${event.date < today() ? ' past' : ''}`}>
+              <Link to={eventPath(event.id)} className={`event-row${event.date < today() ? ' past' : ''}`}>
                 <span className="event-date" aria-hidden>
                   <span className="event-day">{day}</span>
                   <span className="event-month">{month}</span>

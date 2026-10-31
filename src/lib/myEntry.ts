@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { editPath } from '../paths'
 
 /** Det som sparas i webbläsaren för att man ska kunna ändra/ta bort sin anmälan. */
 export type MyEntryRef = { token: string; entryId: string }
@@ -50,6 +51,5 @@ export function useMyEntryRef(eventId: string) {
 }
 
 export function editLink(eventId: string, token: string): string {
-  const base = window.location.href.split('#')[0]
-  return `${base}#/e/${eventId}/andra/${token}`
+  return window.location.origin + editPath(eventId, token)
 }

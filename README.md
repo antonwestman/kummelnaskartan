@@ -39,7 +39,15 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
 
 1. Lägg till en ny flik i Sheetet, t.ex. `promenadloppis-2027`.
 2. Lägg till samma id i `EVENT_IDS` överst i `apps-script/Code.gs`, klistra in i Apps Script och publicera en ny version.
-3. Lägg till eventet i `src/events.ts` med samma `id`.
+3. Lägg till eventet i `src/events.ts` med samma `id`. Eventet får automatiskt en egen sida
+   (`kummelnaskartan.se/<id>/`) med titel, beskrivning och Event-data för Google, och hamnar i sitemap.xml.
+
+## Sidor och sökmotorer
+
+Appen använder vanliga sökvägar (`/`, `/halloween-2026/`). Efter `vite build` kör
+`scripts/prerender.ts` och skriver en färdig HTML-fil per sida, med titel, beskrivning, Open Graph,
+strukturerad data (schema.org) och synligt innehåll, plus `404.html` som fångar övriga adresser
+(t.ex. ändringslänkar) och `sitemap.xml`. Gamla `#/`-länkar skickas vidare till de nya adresserna.
 
 ## Säkerhet
 
