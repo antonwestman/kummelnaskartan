@@ -9,6 +9,7 @@ import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { useMyEntryRef } from '../lib/myEntry'
 import { eventSeo } from '../seo'
 import { EntryList } from './EntryList'
+import { Footer } from './Footer'
 import { EventMap, type Selection } from './EventMap'
 import { MySignup } from './MySignup'
 import { NotFound } from './NotFound'
@@ -184,6 +185,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
             </section>
           </>
         )}
+        <Footer />
       </div>
     </div>
   )
