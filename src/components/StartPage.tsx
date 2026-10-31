@@ -1,19 +1,19 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { EVENTS, sortEvents } from '../events'
+import { EVENTS, groupEvents, type KummelnasEvent } from '../events'
 import { eventPath } from '../paths'
 
-const today = () => new Date().toLocaleDateString('sv-SE')
-
-const dayAndMonth = (isoDate: string) => {
-  const date = new Date(`${isoDate}T12:00:00`)
-  return {
-    day: date.getDate(),
-    month: date.toLocaleDateString('sv-SE', { month: 'short' }).replace('.', ''),
-  }
+const dayAndMonth = (iso: string) => {
+  const date = new Date(iso)
+  const part = (options: Intl.DateTimeFormatOptions) =>
+    date.toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm', ...options })
+  return { day: part({ day: 'numeric' }), month: part({ month: 'short' }).replace('.', '') }
 }
 
 export function StartPage() {
-  const events = sortEvents(EVENTS, today())
+  // Tiden läses en gång när sidan visas; det räcker för att dela upp eventen.
+  const [now] = useState(() => Date.now())
+  const { current, past } = groupEvents(EVENTS, now)
 
   return (
     <main className="start">
@@ -23,13 +23,27 @@ export function StartPage() {
         uppfarten? Sätt ut ditt hus på kartan.
       </p>
 
-      <h2 className="section-label">På gång</h2>
+      {current.length > 0 && <EventSection title="På gång" events={current} />}
+      {past.length > 0 && <EventSection title="Tidigare event" events={past} past />}
+
+      <p className="muted small">
+        För Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil och resten av Saltsjö-Boo. Det du lägger in syns för
+        alla som besöker sidan.
+      </p>
+    </main>
+  )
+}
+
+function EventSection({ title, events, past = false }: { title: string; events: KummelnasEvent[]; past?: boolean }) {
+  return (
+    <section>
+      <h2 className="section-label">{title}</h2>
       <ul className="events">
         {events.map((event) => {
-          const { day, month } = dayAndMonth(event.date)
+          const { day, month } = dayAndMonth(event.startsAt)
           return (
             <li key={event.id}>
-              <Link to={eventPath(event.id)} className={`event-row${event.date < today() ? ' past' : ''}`}>
+              <Link to={eventPath(event.id)} className={`event-row${past ? ' past' : ''}`}>
                 <span className="event-date" aria-hidden>
                   <span className="event-day">{day}</span>
                   <span className="event-month">{month}</span>
@@ -46,11 +60,6 @@ export function StartPage() {
           )
         })}
       </ul>
-
-      <p className="muted small">
-        För Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil och resten av Saltsjö-Boo. Det du lägger in syns för
-        alla som besöker sidan.
-      </p>
-    </main>
+    </section>
   )
 }

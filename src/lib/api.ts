@@ -68,14 +68,32 @@ function post<T extends z.ZodType>(schema: T, body: Record<string, unknown>) {
   return request(schema, { method: 'POST', body: JSON.stringify(body) })
 }
 
-const ListSchema = z.object({ ok: z.literal(true), entries: z.array(EntrySchema) })
+const SignupStateSchema = z.enum(['notYetOpen', 'open', 'closed'])
+
+/** Styrs av EVENTS i apps-script/Code.gs. */
+export type Signup =
+  | { status: 'open' }
+  | { status: 'closed' }
+  | { status: 'notYetOpen'; opensAt: string | null }
+
+const ListSchema = z.object({
+  ok: z.literal(true),
+  entries: z.array(EntrySchema),
+  // Saknas i äldre versioner av skriptet – då räknas anmälan som öppen.
+  signup: SignupStateSchema.optional(),
+  signupOpensAt: z.string().nullable().optional(),
+})
 const EntryResponseSchema = z.object({ ok: z.literal(true), entry: EntrySchema })
 const CreatedSchema = EntryResponseSchema.extend({ token: z.string() })
 const OkSchema = z.object({ ok: z.literal(true) })
 
-export async function fetchEntries(eventId: string): Promise<Entry[]> {
+export async function fetchEntries(eventId: string): Promise<{ entries: Entry[]; signup: Signup }> {
   const data = await request(ListSchema, undefined, `?event=${encodeURIComponent(eventId)}`)
-  return data.entries
+  const signup: Signup =
+    data.signup === 'notYetOpen'
+      ? { status: 'notYetOpen', opensAt: data.signupOpensAt ?? null }
+      : { status: data.signup ?? 'open' }
+  return { entries: data.entries, signup }
 }
 
 export async function createEntry(eventId: string, input: EntryInput): Promise<{ entry: Entry; token: string }> {

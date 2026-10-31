@@ -9,7 +9,7 @@
  *   dist/sitemap.xml
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { EVENTS, sortEvents, type KummelnasEvent } from '../src/events.ts'
+import { EVENTS, groupEvents, type KummelnasEvent } from '../src/events.ts'
 import { SITE_URL, eventPath } from '../src/paths.ts'
 import { eventSeo, siteSeo, type PageSeo } from '../src/seo.ts'
 
@@ -52,11 +52,15 @@ function renderPage(seo: PageSeo, body: string, options: { noindex?: boolean } =
   return html
 }
 
-function startBody(today: string): string {
-  const items = sortEvents(EVENTS, today)
-    .map((e) => `<li><a href="${eventPath(e.id)}">${escapeHtml(e.title)}</a> – ${escapeHtml(e.dateLabel)}</li>`)
-    .join('')
-  return `<main class="start"><h1>Kummelnäskartan</h1><p class="lead">${escapeHtml(siteSeo().description)}</p><h2 class="section-label">På gång</h2><ul>${items}</ul></main>`
+function startBody(now: number): string {
+  const list = (title: string, events: KummelnasEvent[]) =>
+    events.length === 0
+      ? ''
+      : `<h2 class="section-label">${title}</h2><ul>${events
+          .map((e) => `<li><a href="${eventPath(e.id)}">${escapeHtml(e.title)}</a> – ${escapeHtml(e.dateLabel)}</li>`)
+          .join('')}</ul>`
+  const { current, past } = groupEvents(EVENTS, now)
+  return `<main class="start"><h1>Kummelnäskartan</h1><p class="lead">${escapeHtml(siteSeo().description)}</p>${list('På gång', current)}${list('Tidigare event', past)}</main>`
 }
 
 function eventBody(event: KummelnasEvent): string {
@@ -70,9 +74,7 @@ function write(path: string, content: string) {
   console.log(`prerender: ${path}`)
 }
 
-const today = new Date().toISOString().slice(0, 10)
-
-write(`${DIST}/index.html`, renderPage(siteSeo(), startBody(today)))
+write(`${DIST}/index.html`, renderPage(siteSeo(), startBody(Date.now())))
 write(`${DIST}/404.html`, renderPage(siteSeo(), '', { noindex: true }))
 for (const event of EVENTS) {
   write(`${DIST}${eventPath(event.id)}index.html`, renderPage(eventSeo(event), eventBody(event)))
