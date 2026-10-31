@@ -510,6 +510,21 @@ details > p {
     0 0 24px 6px rgb(255 138 42 / 0.25);
 }
 
+.pin-off {
+  background: #4a4640;
+  border-color: #1a1815;
+  box-shadow: none;
+}
+
+.entry.off {
+  opacity: 0.55;
+}
+
+.entry.off::before {
+  background: #4a4640;
+  box-shadow: none;
+}
+
 .pin-mine {
   background: #fff3e6;
   border-color: var(--accent);

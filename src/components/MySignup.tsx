@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { KummelnasEvent } from '../events'
-import { ApiError, createEntry, deleteEntry, updateEntry, type Entry, type Signup } from '../lib/api'
+import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry, type Signup } from '../lib/api'
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { SignupForm } from './SignupForm'
@@ -77,6 +77,7 @@ export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: 
       entry={myEntry}
       token={myRef.token}
       onEdit={open ? () => setEditing(true) : null}
+      onUpdated={(entry) => onSaved(entry, myRef.token)}
       onDeleted={() => onDeleted(myEntry.id)}
     />
   )
@@ -116,6 +117,7 @@ function MyEntrySummary({
   entry,
   token,
   onEdit,
+  onUpdated,
   onDeleted,
 }: {
   event: KummelnasEvent
@@ -123,25 +125,42 @@ function MyEntrySummary({
   token: string
   /** null när anmälan är stängd – då går det bara att ta bort. */
   onEdit: (() => void) | null
+  onUpdated: (entry: Entry) => void
   onDeleted: () => void
 }) {
-  const [deleteState, setDeleteState] = useState<
-    { kind: 'idle' } | { kind: 'deleting' } | { kind: 'error'; message: string }
+  const [actionState, setActionState] = useState<
+    { kind: 'idle' } | { kind: 'busy'; action: 'delete' | 'pause' } | { kind: 'error'; message: string }
   >({ kind: 'idle' })
+  const busy = actionState.kind === 'busy'
   const [copied, setCopied] = useState(false)
   const link = editLink(event.id, token)
 
   const handleDelete = async () => {
     if (!window.confirm('Ta bort ditt hus från kartan?')) return
-    setDeleteState({ kind: 'deleting' })
+    setActionState({ kind: 'busy', action: 'delete' })
     try {
       await deleteEntry(event.id, token)
       trackEvent('hus-borttaget')
       onDeleted()
     } catch (err) {
-      setDeleteState({
+      setActionState({
         kind: 'error',
         message: err instanceof ApiError ? err.message : 'Kunde inte ta bort. Försök igen.',
+      })
+    }
+  }
+
+  const handleTogglePaused = async () => {
+    setActionState({ kind: 'busy', action: 'pause' })
+    try {
+      const updated = await setPaused(event.id, token, !entry.paused)
+      trackEvent(updated.paused ? 'hus-slackt' : 'hus-tant')
+      onUpdated(updated)
+      setActionState({ kind: 'idle' })
+    } catch (err) {
+      setActionState({
+        kind: 'error',
+        message: err instanceof ApiError ? err.message : 'Kunde inte spara. Försök igen.',
       })
     }
   }
@@ -161,12 +180,24 @@ function MyEntrySummary({
 
   return (
     <>
-      <h2 id="signup-heading">Du är med på kartan</h2>
+      <h2 id="signup-heading">{entry.paused ? 'Ditt hus är släckt' : 'Du är med på kartan'}</h2>
       <p className="my-entry">
         <strong>{entry.address}</strong>
         {(entry.name || entry.note) && <span className="muted">{[entry.name, entry.note].filter(Boolean).join(' · ')}</span>}
       </p>
+      <p className="muted small">
+        {entry.paused
+          ? 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'
+          : 'Slut på godis eller inte hemma? Släck huset så syns det grått på kartan.'}
+      </p>
       <div className="form-actions">
+        <button type="button" className={`button${entry.paused ? ' primary' : ''}`} onClick={handleTogglePaused} disabled={busy}>
+          {actionState.kind === 'busy' && actionState.action === 'pause'
+            ? 'Sparar…'
+            : entry.paused
+              ? 'Tänd igen'
+              : 'Släck huset'}
+        </button>
         {onEdit && (
           <button type="button" className="button" onClick={onEdit}>
             Ändra
@@ -176,14 +207,14 @@ function MyEntrySummary({
           type="button"
           className="button danger"
           onClick={handleDelete}
-          disabled={deleteState.kind === 'deleting'}
+          disabled={busy}
         >
-          {deleteState.kind === 'deleting' ? 'Tar bort…' : 'Ta bort'}
+          {actionState.kind === 'busy' && actionState.action === 'delete' ? 'Tar bort…' : 'Ta bort'}
         </button>
       </div>
-      {deleteState.kind === 'error' && (
+      {actionState.kind === 'error' && (
         <p className="form-error" role="alert">
-          {deleteState.message}
+          {actionState.message}
         </p>
       )}
       <details className="edit-link">
