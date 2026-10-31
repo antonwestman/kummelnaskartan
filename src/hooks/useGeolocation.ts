@@ -7,8 +7,11 @@ export type GeolocationState =
   | { status: 'on'; position: Position; accuracy: number }
   | { status: 'error'; message: string }
 
-/** Följer användarens position så länge `enabled` är true. */
-export function useGeolocation(enabled: boolean): GeolocationState {
+/**
+ * Följer användarens position så länge `enabled` är true.
+ * Ett nytt `attempt` gör ett nytt försök, t.ex. efter att användaren nekat och sedan ändrat inställningen.
+ */
+export function useGeolocation(enabled: boolean, attempt: number): GeolocationState {
   const [state, setState] = useState<GeolocationState>({ status: 'pending' })
 
   useEffect(() => {
@@ -25,8 +28,8 @@ export function useGeolocation(enabled: boolean): GeolocationState {
           status: 'error',
           message:
             err.code === err.PERMISSION_DENIED
-              ? 'Du har inte gett sidan tillgång till din position.'
-              : 'Kunde inte hitta din position.',
+              ? `Sidan får inte se din position. Tillåt plats för ${window.location.host} i webbläsarens inställningar och ladda om sidan.`
+              : 'Kunde inte hitta din position. Kontrollera att platstjänster är på och försök igen.',
         }),
       { enableHighAccuracy: true, maximumAge: 10_000 },
     )
@@ -34,7 +37,7 @@ export function useGeolocation(enabled: boolean): GeolocationState {
       navigator.geolocation.clearWatch(id)
       setState({ status: 'pending' })
     }
-  }, [enabled])
+  }, [enabled, attempt])
 
   if (!enabled) return { status: 'off' }
   if (!('geolocation' in navigator)) return { status: 'error', message: 'Din webbläsare stöder inte positionering.' }

@@ -26,7 +26,9 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const { state, reload, upsert, remove } = useEntries(event.id, configured)
   const [myRef, setMyRef] = useMyEntryRef(event.id)
   const [locating, setLocating] = useState(false)
-  const geo = useGeolocation(locating)
+  const [locateAttempt, setLocateAttempt] = useState(0)
+  const geo = useGeolocation(locating, locateAttempt)
+  const geoFailed = geo.status === 'error'
   const [radius, setRadius] = useState<number | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const mapRef = useRef<HTMLElement>(null)
@@ -40,14 +42,27 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const nearbyEntries = userPosition && activeRadius ? withinRadius(entries, userPosition, activeRadius) : entries
   const sortedEntries = sortByDistance(nearbyEntries, userPosition)
 
+  // Nekad eller misslyckad position: visa "Alla" och en släckt knapp i stället för ett filter som inte gäller.
+  const shownRadius = geoFailed ? null : radius
+  const locateActive = locating && !geoFailed
+
+  const startLocating = () => {
+    setLocating(true)
+    setLocateAttempt((n) => n + 1)
+  }
+
   const chooseRadius = (value: number | null) => {
     setRadius(value)
-    if (value) setLocating(true)
+    if (value && !locateActive) startLocating()
   }
 
   const toggleLocating = () => {
-    if (locating) setRadius(null)
-    setLocating(!locating)
+    if (locateActive) {
+      setLocating(false)
+      setRadius(null)
+    } else {
+      startLocating()
+    }
   }
 
   const showOnMap = (entry: Entry) => {
@@ -80,7 +95,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
             <button
               key={value ?? 'all'}
               type="button"
-              aria-pressed={radius === value}
+              aria-pressed={shownRadius === value}
               onClick={() => chooseRadius(value)}
             >
               {value ? formatDistance(value) : 'Alla'}
@@ -89,10 +104,10 @@ function EventView({ event }: { event: KummelnasEvent }) {
         </div>
         <button
           type="button"
-          className={`locate${locating ? ' active' : ''}`}
+          className={`locate${locateActive ? ' active' : ''}`}
           onClick={toggleLocating}
-          aria-pressed={locating}
-          aria-label={locating ? 'Sluta visa min position' : 'Visa min position'}
+          aria-pressed={locateActive}
+          aria-label={locateActive ? 'Sluta visa min position' : 'Visa min position'}
           title="Min position"
         >
           <LocateIcon />
