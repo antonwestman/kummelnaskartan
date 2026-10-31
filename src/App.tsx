@@ -1,4 +1,6 @@
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
+import { trackPageview } from './lib/analytics'
 import { StartPage } from './components/StartPage'
 import { EventPage } from './components/EventPage'
 import { ClaimEditLink } from './components/ClaimEditLink'
@@ -9,6 +11,7 @@ import { NotFound } from './components/NotFound'
 export function App() {
   return (
     <BrowserRouter>
+      <TrackPageviews />
       <Routes>
         <Route path="/" element={<StartPage />} />
         <Route path="/:eventId" element={<EventPage />} />
@@ -17,4 +20,10 @@ export function App() {
       </Routes>
     </BrowserRouter>
   )
+}
+
+function TrackPageviews() {
+  const { pathname } = useLocation()
+  useEffect(() => trackPageview(pathname), [pathname])
+  return null
 }
