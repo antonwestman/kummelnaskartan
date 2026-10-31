@@ -5,12 +5,14 @@ import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { displayAddress } from '../lib/address'
 import { EntryDetails } from './EntryList'
+import { formatHours } from '../lib/hours'
+import type { ShownEntry } from '../lib/status'
 import { SignupForm } from './SignupForm'
 
 type Props = {
   event: KummelnasEvent
   myRef: MyEntryRef | null
-  myEntry: Entry | undefined
+  myEntry: ShownEntry | undefined
   /** null = laddar fortfarande. */
   signup: Signup | null
   onSaved: (entry: Entry, token: string) => void
@@ -91,6 +93,12 @@ export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: 
   )
 }
 
+const HEADINGS: Record<ShownEntry['status'], string> = {
+  open: 'Du är med på kartan',
+  paused: 'Ditt hus är släckt',
+  closed: 'Ditt hus är stängt',
+}
+
 const formatOpensAt = (iso: string) =>
   new Date(iso).toLocaleString('sv-SE', {
     timeZone: 'Europe/Stockholm',
@@ -129,7 +137,7 @@ function MyEntrySummary({
   onDeleted,
 }: {
   event: KummelnasEvent
-  entry: Entry
+  entry: ShownEntry
   token: string
   /** null när anmälan är stängd – då går det bara att ta bort. */
   onEdit: (() => void) | null
@@ -188,26 +196,37 @@ function MyEntrySummary({
 
   return (
     <>
-      <h2 id="signup-heading">{entry.paused ? 'Ditt hus är släckt' : 'Du är med på kartan'}</h2>
+      <h2 id="signup-heading">{HEADINGS[entry.status]}</h2>
       <p className="my-entry">
         <strong>{displayAddress(entry.address)}</strong>
         <EntryDetails entry={entry} />
       </p>
       <p className="muted small">
-        {entry.paused
-          ? 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'
-          : 'Slut på godis eller inte hemma? Släck huset så syns det grått på kartan.'}
+        {entry.status === 'open' && 'Slut på godis eller inte hemma? Släck huset så syns det grått på kartan.'}
+        {entry.status === 'paused' && 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'}
+        {entry.status === 'closed' &&
+          `Öppet ${formatHours({ openFrom: '', openUntil: entry.openUntil })} har passerat, så huset syns grått på kartan.${
+            onEdit ? ' Har du öppet längre kan du ändra tiden.' : ''
+          }`}
       </p>
       <div className="form-actions">
-        <button type="button" className={`button${entry.paused ? ' primary' : ''}`} onClick={handleTogglePaused} disabled={busy}>
-          {actionState.kind === 'busy' && actionState.action === 'pause'
-            ? 'Sparar…'
-            : entry.paused
-              ? 'Tänd igen'
-              : 'Släck huset'}
-        </button>
+        {/* Stängt av tiden: släckt redan – då är "Ändra" (tiden) det man vill göra. */}
+        {entry.status !== 'closed' && (
+          <button
+            type="button"
+            className={`button${entry.status === 'paused' ? ' primary' : ''}`}
+            onClick={handleTogglePaused}
+            disabled={busy}
+          >
+            {actionState.kind === 'busy' && actionState.action === 'pause'
+              ? 'Sparar…'
+              : entry.paused
+                ? 'Tänd igen'
+                : 'Släck huset'}
+          </button>
+        )}
         {onEdit && (
-          <button type="button" className="button" onClick={onEdit}>
+          <button type="button" className={`button${entry.status === 'closed' ? ' primary' : ''}`} onClick={onEdit}>
             Ändra
           </button>
         )}
