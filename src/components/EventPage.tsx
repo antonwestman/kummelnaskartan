@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { SCRIPT_URL } from '../config'
-import { findEvent, type KummelnasEvent, type Place } from '../events'
+import { findEvent, hasEnded, type KummelnasEvent, type Place } from '../events'
 import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry } from '../lib/api'
@@ -14,6 +14,7 @@ import { stockholmDate } from '../lib/dates'
 import { stockholmMinutes } from '../lib/hours'
 import { sortForDisplay, withStatus } from '../lib/status'
 import { eventSeo } from '../seo'
+import { AboutData } from './AboutData'
 import { EntryList } from './EntryList'
 import { EventMap, type Selection } from './EventMap'
 import { entryMarkerId, placeMarkerId } from './markerIcon'
@@ -249,6 +250,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
               query={query}
               onQueryChange={changeQuery}
               loading={state.status === 'loading'}
+              ended={hasEnded(event, now)}
               onShow={showEntry}
             />
           </>
@@ -265,6 +267,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
         )}
 
         {configured && state.status !== 'error' && !myEntry && signupSection}
+
+        <AboutData />
       </div>
     </div>
   )

@@ -13,10 +13,22 @@ type Props = {
   query: string
   onQueryChange: (query: string) => void
   loading: boolean
+  /** Eventet är slut: en tom lista betyder då att husen inte visas längre, inte att ingen är med. */
+  ended: boolean
   onShow: (entry: ShownEntry) => void
 }
 
-export function EntryList({ entries, myEntryId, userPosition, radius, query, onQueryChange, loading, onShow }: Props) {
+export function EntryList({
+  entries,
+  myEntryId,
+  userPosition,
+  radius,
+  query,
+  onQueryChange,
+  loading,
+  ended,
+  onShow,
+}: Props) {
   return (
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" className="section-label">
@@ -39,7 +51,9 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
             ? 'Inga hus matchar sökningen.'
             : radius
               ? 'Inga hus så nära. Prova ett större avstånd.'
-              : 'Inga hus än.'}
+              : ended
+                ? 'Eventet är slut och husen visas inte längre.'
+                : 'Inga hus än.'}
         </p>
       )}
       <ul className="entries">

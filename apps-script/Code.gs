@@ -32,6 +32,10 @@ var TEXT_COLUMNS = ['openFrom', 'openUntil', 'date'];
 // Hur långt fram man kan välja datum när varje hus har eget datum.
 var MAX_DAYS_AHEAD = 366;
 
+// Så många dagar efter att anmälan stängt (eller efter husets eget datum) visas husen inte längre,
+// och cleanUp() raderar dem. Samma som HIDE_AFTER_DAYS i src/config.ts.
+var HIDE_AFTER_DAYS = 7;
+
 // Ungefärlig ruta runt Boo (Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil m.fl.).
 // Adresser utanför avvisas så att felaktiga geokodningar inte hamnar på kartan.
 var BOUNDS = { south: 59.29, west: 18.15, north: 59.39, east: 18.38 };
@@ -41,7 +45,9 @@ var MAX_LENGTH = { address: 120, name: 60, note: 200 };
 function doGet(e) {
   return handle_(function () {
     var sheet = getEventSheet_(e.parameter.event);
-    var entries = readRows_(sheet).map(publicEntry_);
+    var entries = readRows_(sheet)
+      .filter(function (entry) { return !isExpired_(e.parameter.event, entry); })
+      .map(publicEntry_);
     var config = EVENTS[e.parameter.event];
     return {
       ok: true,
@@ -402,6 +408,48 @@ function resolvePosition_(address, position) {
   }
   var loc = results[0].geometry.location;
   return { lat: loc.lat, lng: loc.lng };
+}
+
+/**
+ * Har huset passerat sin tid? HIDE_AFTER_DAYS efter att anmälan stängt (signupClosesAt), eller för
+ * event där varje hus har eget datum: HIDE_AFTER_DAYS efter husets datum.
+ */
+function isExpired_(eventId, entry) {
+  var config = EVENTS[eventId];
+  var cutoff = Date.now() - HIDE_AFTER_DAYS * 86400000;
+  if (config.signupClosesAt && Date.parse(config.signupClosesAt) <= cutoff) return true;
+  return Boolean(config.ownDates && entry.date && entry.date < stockholmDate_(-HIDE_AFTER_DAYS));
+}
+
+/**
+ * Raderar hus som har passerat sin tid (se isExpired_) i alla event. Körs varje natt efter
+ * att installCleanUp() har körts en gång, men går också att köra för hand från editorn.
+ */
+function cleanUp() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var dateColumn = HEADERS.indexOf('date');
+    Object.keys(EVENTS).forEach(function (eventId) {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(eventId);
+      if (!sheet || sheet.getLastRow() < 2) return;
+      var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length).getValues();
+      // Nerifrån och upp, så att radnumren ovanför inte flyttas när en rad tas bort.
+      for (var i = values.length - 1; i >= 0; i--) {
+        if (isExpired_(eventId, { date: dateValue_(values[i][dateColumn]) })) sheet.deleteRow(i + 2);
+      }
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Kör en gång från editorn: kör cleanUp() varje natt. Kör du den igen ersätts den gamla schemaläggningen. */
+function installCleanUp() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'cleanUp') ScriptApp.deleteTrigger(trigger);
+  });
+  ScriptApp.newTrigger('cleanUp').timeBased().everyDays(1).atHour(3).create();
 }
 
 /** Kör en gång från editorn för att godkänna behörigheter (Sheets + Maps). */

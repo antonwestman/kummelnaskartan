@@ -120,3 +120,8 @@ npm run build
 
 Adresser, namn och meddelanden syns publikt på kartan. Själva Sheetet är privat. Apps Scriptet skickar bara ut de
 publika fälten. Vill du ta bort en anmälan manuellt räcker det att radera raden i Sheetet.
+
+Husen visas bara `HIDE_AFTER_DAYS` (7) dagar efter att anmälan stängt (`signupClosesAt`), eller för loppisar efter
+husets eget datum. `cleanUp()` i `Code.gs` raderar sedan raderna. Kör **`installCleanUp`** en gång från
+Apps Script-editorn (och godkänn behörigheten) så körs `cleanUp` varje natt. Sidan beskriver detta under
+"Om kartan och dina uppgifter", med kontaktadressen `CONTACT_EMAIL` i `src/config.ts`.

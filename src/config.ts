@@ -17,3 +17,9 @@ export const MAP_TILES = {
   url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 } as const
+
+/** Kontaktadress som visas på sidan (vidarebefordras via ImprovMX). */
+export const CONTACT_EMAIL = 'hej@kummelnaskartan.se'
+
+/** Så länge efter att ett event (eller en loppisdag) är slut som husen visas. Samma som HIDE_AFTER_DAYS i Code.gs. */
+export const HIDE_AFTER_DAYS = 7
