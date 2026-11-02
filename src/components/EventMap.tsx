@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import L from 'leaflet'
 import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileLayer, useMap } from 'react-leaflet'
-import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES } from '../config'
+import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES, PAN_LIMIT_FACTOR } from '../config'
 import type { PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position, Summary } from '../lib/api'
@@ -57,7 +57,10 @@ export function EventMap({
       zoom={15}
       className="map"
       scrollWheelZoom
+      maxBounds={PAN_LIMIT}
+      maxBoundsViscosity={1}
     >
+      <LimitZoomOut />
       <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={19} />
       <FocusFog />
       {entries.map((entry) => {
@@ -233,6 +236,28 @@ function FlyToOnce({ position }: { position: Position }) {
     done.current = true
     map.flyTo([position.lat, position.lng], Math.max(map.getZoom(), 17))
   }, [position, map])
+  return null
+}
+
+/** Rutan man kan röra sig inom: PAN_LIMIT_FACTOR gånger fokusområdets diameter, runt dess mitt. */
+const PAN_LIMIT = L.latLng(FOCUS_AREA.center.lat, FOCUS_AREA.center.lng).toBounds(
+  FOCUS_AREA.radiusMeters * 2 * PAN_LIMIT_FACTOR,
+)
+
+/**
+ * maxBounds stoppar bara panorering. Det här stoppar också utzoomning, så att man aldrig ser mer än rutan.
+ * Räknas om när kartan byter storlek (t.ex. när telefonen vänds).
+ */
+function LimitZoomOut() {
+  const map = useMap()
+  useEffect(() => {
+    const apply = () => map.setMinZoom(map.getBoundsZoom(PAN_LIMIT, true))
+    apply()
+    map.on('resize', apply)
+    return () => {
+      map.off('resize', apply)
+    }
+  }, [map])
   return null
 }
 
