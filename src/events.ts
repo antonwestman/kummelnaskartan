@@ -92,6 +92,45 @@ export type KummelnasEvent = {
   places: PlaceLayer | null
 }
 
+/**
+ * Allmänna pulkabackar. Visas året om på Pulkabackar-kartan och på vintern i Ute i Kummelnäs,
+ * så att de bara behöver skrivas in här.
+ */
+const PULKABACKAR: Place[] = [
+  {
+    id: 'rensattrabacken',
+    name: 'Rensättrabacken',
+    category: 'pulkabacke',
+    lat: 59.3364,
+    lng: 18.2581,
+    note: 'Intill Rensättra lekplats, mellan Rensättra allé och Skördevägen.',
+  },
+  {
+    id: 'bathojdsbacken',
+    name: 'Båthöjdsbacken',
+    category: 'pulkabacke',
+    lat: 59.3235,
+    lng: 18.2514,
+    note: 'Kommunens backe, i skogen mellan Knopvägen och Vantvägen vid basketplanen.',
+  },
+  {
+    id: 'fregattbacken',
+    name: 'Fregattbacken',
+    category: 'pulkabacke',
+    lat: 59.3148,
+    lng: 18.2736,
+    note: 'Skid- och pulkabacke vid Friluftsfrämjandets anläggning, Styrbordsvägen 6.',
+  },
+  {
+    id: 'nyckelviken',
+    name: 'Nyckelvikens pulkabacke',
+    category: 'pulkabacke',
+    lat: 59.3228,
+    lng: 18.1897,
+    note: 'Nära herrgården och bondgården i Nyckelvikens naturreservat.',
+  },
+]
+
 export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
@@ -136,9 +175,8 @@ export const EVENTS: KummelnasEvent[] = [
     },
     places: {
       heading: 'Allmänna backar',
-      // Lägg till allmänna backar här, t.ex.:
-      // { id: 'kummelbacken', name: 'Kummelbacken', category: 'pulkabacke', lat: 59.33, lng: 18.27, note: 'Flack' },
-      items: [],
+      // Lägg till fler backar i PULKABACKAR ovan.
+      items: PULKABACKAR,
     },
   },
   {
@@ -175,6 +213,7 @@ export const EVENTS: KummelnasEvent[] = [
         { id: 'abbortrasket-grill', name: 'Grillplats vid Abborträsket', category: 'grillplats', lat: 59.331637, lng: 18.286643 },
         // Grillplats vid Karbosjön: lägg till med rätt position, t.ex.
         // { id: 'karbosjon-grill', name: 'Grillplats vid Karbosjön', category: 'grillplats', lat: …, lng: … },
+        ...PULKABACKAR.map((backe): Place => ({ ...backe, season: 'winter' })),
         { id: 'riset-brygga', name: 'Riset', category: 'batbrygga', lat: 59.359993, lng: 18.285518, note: 'Hållplats för skärgårdsbåtar.' },
         {
           id: 'hasseludden-brygga',
