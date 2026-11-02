@@ -1,4 +1,4 @@
-import { distanceInMeters, formatDistance, sortByDistance, withinRadius } from './geo'
+import { circlePolygon, distanceInMeters, formatDistance, sortByDistance, withinRadius } from './geo'
 
 describe('geo', () => {
   const near = { id: 'near', lat: 59.3546, lng: 18.2686 }
@@ -26,4 +26,11 @@ describe('geo', () => {
     expect(formatDistance(1260)).toBe('1,3 km')
     expect(formatDistance(1000)).toBe('1 km')
   })
+})
+
+it('draws a circle whose corners all lie at the radius', () => {
+  const center = { lat: 59.3545, lng: 18.2685 }
+  const corners = circlePolygon(center, 1500, 16)
+  expect(corners).toHaveLength(16)
+  for (const [lat, lng] of corners) expect(distanceInMeters(center, { lat, lng })).toBeCloseTo(1500, -1)
 })

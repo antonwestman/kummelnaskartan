@@ -24,6 +24,16 @@ export function withinRadius<T extends Position>(items: T[], from: Position, met
   return items.filter((item) => distanceInMeters(from, item) <= meters)
 }
 
+/** Ungefärlig cirkel som hörn i lat/lng, för att rita på kartan. */
+export function circlePolygon(center: Position, radiusMeters: number, steps = 64): [number, number][] {
+  const latRadius = radiusMeters / 111_320
+  const lngRadius = radiusMeters / (111_320 * Math.cos((center.lat * Math.PI) / 180))
+  return Array.from({ length: steps }, (_, i) => {
+    const angle = (2 * Math.PI * i) / steps
+    return [center.lat + latRadius * Math.sin(angle), center.lng + lngRadius * Math.cos(angle)]
+  })
+}
+
 export function walkingDirectionsUrl(to: Position): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lng}&travelmode=walking`
 }

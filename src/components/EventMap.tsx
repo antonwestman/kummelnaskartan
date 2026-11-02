@@ -1,7 +1,7 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import L from 'leaflet'
-import { Circle, CircleMarker, MapContainer, Marker, Pane, Popup, TileLayer, useMap } from 'react-leaflet'
-import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
+import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileLayer, useMap } from 'react-leaflet'
+import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position, Summary } from '../lib/api'
@@ -9,7 +9,7 @@ import { formatEntryDate } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { heatColor, heatOpacity, metersPerPixel } from '../lib/summary'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
-import { walkingDirectionsUrl } from '../lib/geo'
+import { circlePolygon, walkingDirectionsUrl } from '../lib/geo'
 import { entryMarkerId, pinIcon, placeMarkerId } from './markerIcon'
 
 /** Ett nytt objekt per val, så att samma hus kan väljas igen och ändå flyga dit. */
@@ -59,6 +59,7 @@ export function EventMap({
       scrollWheelZoom
     >
       <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={19} />
+      <FocusFog />
       {entries.map((entry) => {
         const statusLabel = STATUS_LABEL[entry.status]
         return (
@@ -87,7 +88,7 @@ export function EventMap({
       {summary && (
         // Värmekarta: en mjuk glöd per ruta. Bygger bara på rutorna (minst några hus per ruta), aldrig på enskilda hus.
         <Pane name={HEAT_PANE} style={{ zIndex: 350 }}>
-          <BlurWithZoom pane={HEAT_PANE} cellMeters={summary.cellMeters} />
+          <BlurWithZoom pane={HEAT_PANE} blurMeters={summary.cellMeters * 0.35} />
           {cells.map((cell) => (
             <Circle
               key={`${cell.lat}:${cell.lng}`}
@@ -148,23 +149,56 @@ export function EventMap({
 }
 
 const HEAT_PANE = 'heat'
+const FOG_PANE = 'fog'
 
-/** Suddar ut värmekartan lika mycket i meter oavsett zoom, så att glöden ser likadan ut när man zoomar. */
-function BlurWithZoom({ pane, cellMeters }: { pane: string; cellMeters: number }) {
+/** Hela världen med ett hål där fokusområdet är. Räknas ut en gång. */
+const FOG_RINGS: [number, number][][] = [
+  [
+    [85, -180],
+    [85, 180],
+    [-85, 180],
+    [-85, -180],
+  ],
+  circlePolygon(FOCUS_AREA.center, FOCUS_AREA.radiusMeters),
+]
+
+/**
+ * Mörk dimma utanför fokusområdet, med mjuk kant. Ligger direkt ovanpå kartbilderna, under allt annat,
+ * så att hus och platser utanför området syns som vanligt.
+ */
+function FocusFog() {
+  // Eget SVG-lager som sträcker sig en hel skärm utanför kanten, så att suddet inte ljusnar vid skärmkanten.
+  const renderer = useMemo(() => L.svg({ padding: 1, pane: FOG_PANE }), [])
+  return (
+    <Pane name={FOG_PANE} style={{ zIndex: 250, pointerEvents: 'none' }}>
+      <BlurWithZoom pane={FOG_PANE} blurMeters={250} />
+      <Polygon
+        positions={FOG_RINGS}
+        interactive={false}
+        renderer={renderer}
+        pathOptions={{ stroke: false, fillColor: '#100f0d', fillOpacity: 0.7 }}
+      />
+    </Pane>
+  )
+}
+
+/** Suddar ut ett kartlager lika mycket i meter oavsett zoom, så att det ser likadant ut när man zoomar. */
+function BlurWithZoom({ pane, blurMeters }: { pane: string; blurMeters: number }) {
   const map = useMap()
   useEffect(() => {
     const apply = () => {
       const element = map.getPane(pane)
       if (!element) return
-      const pixels = cellMeters / metersPerPixel(map.getZoom(), map.getCenter().lat)
-      element.style.filter = `blur(${Math.round(pixels * 0.35)}px)`
+      const pixels = blurMeters / metersPerPixel(map.getZoom(), map.getCenter().lat)
+      // Taket håller suddet billigt när man zoomar in långt.
+      element.style.filter = `blur(${Math.min(60, Math.round(pixels))}px)`
     }
     apply()
     map.on('zoomend', apply)
     return () => {
       map.off('zoomend', apply)
     }
-  }, [map, pane, cellMeters])
+  }, [map, pane, blurMeters])
   return null
 }
 
