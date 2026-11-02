@@ -60,7 +60,7 @@ function startBody(now: number): string {
           .map((e) => `<li><a href="${eventPath(e.id)}">${escapeHtml(e.title)}</a> – ${escapeHtml(e.periodLabel)}</li>`)
           .join('')}</ul>`
   const { ongoing, upcoming, past } = groupEvents(EVENTS, now)
-  return `<main class="start"><h1>Kummelnäskartan</h1><p class="lead">${escapeHtml(siteSeo().description)}</p>${list('Just nu i området', ongoing)}${list('Kommande', upcoming)}${list('Tidigare event', past)}</main>`
+  return `<main class="start"><h1>Kummelnäskartan</h1><p class="lead">${escapeHtml(siteSeo().description)}</p>${list('På gång', ongoing)}${list('Kommande', upcoming)}${list('Tidigare event', past)}</main>`
 }
 
 function eventBody(event: KummelnasEvent): string {

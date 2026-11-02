@@ -25,11 +25,6 @@ export type KummelnasEvent = {
   id: string
   title: string
   /**
-   * 'one-day': en dag eller kväll, listas med datum under "Kommande".
-   * 'season': pågår länge (t.ex. hela vintern), listas under "Just nu i området" medan det pågår.
-   */
-  duration: 'one-day' | 'season'
-  /**
    * 'event': alla hus gäller eventets dag eller hela perioden (Halloween, pulkabackar).
    * 'own': varje hus väljer sitt eget datum inom perioden och lyser bara den dagen (loppisar).
    * Måste stämma med ownDates i EVENTS i apps-script/Code.gs.
@@ -37,7 +32,8 @@ export type KummelnasEvent = {
   entryDates: 'event' | 'own'
   /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
-   * Efter endsAt listas eventet under "Tidigare event". När man kan lägga in hus styrs
+   * Styr var eventet listas på startsidan: "Kommande" före startsAt, "På gång" fram till endsAt,
+   * sedan "Tidigare event". Ett event kan vara en kväll (Halloween) eller en hel vinter (pulkabackar). När man kan lägga in hus styrs
    * separat av EVENTS i apps-script/Code.gs.
    */
   startsAt: string
@@ -58,7 +54,6 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
     title: 'Trick or treat',
-    duration: 'one-day',
     entryDates: 'event',
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
@@ -71,7 +66,6 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'loppisar',
     title: 'Loppisar',
-    duration: 'season',
     entryDates: 'own',
     startsAt: '2026-11-01T00:00:00+01:00',
     endsAt: '2028-01-01T00:00:00+01:00',
@@ -84,7 +78,6 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'pulkabackar-2026',
     title: 'Pulkabackar',
-    duration: 'season',
     entryDates: 'event',
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
@@ -105,7 +98,6 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'skridskor-2026',
     title: 'Skridskor',
-    duration: 'season',
     entryDates: 'event',
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
@@ -143,19 +135,19 @@ export function findEvent(id: string): KummelnasEvent | undefined {
 
 export const hasEnded = (event: KummelnasEvent, now: number) => now >= Date.parse(event.endsAt)
 
-const isOngoingSeason = (event: KummelnasEvent, now: number) =>
-  event.duration === 'season' && now >= Date.parse(event.startsAt) && !hasEnded(event, now)
+const hasStarted = (event: KummelnasEvent, now: number) => now >= Date.parse(event.startsAt)
 
 /**
- * Just nu: säsonger som pågår. Kommande: allt annat som inte är slut, närmast först.
- * Tidigare: slut, senaste först.
+ * På gång: har börjat men inte slutat, det som slutar först överst (en kväll före en hel vinter).
+ * Kommande: har inte börjat, närmast först. Tidigare: slut, senaste först.
  */
 export function groupEvents(events: KummelnasEvent[], now: number) {
-  const byStart = (a: KummelnasEvent, b: KummelnasEvent) => Date.parse(a.startsAt) - Date.parse(b.startsAt)
-  const notEnded = events.filter((e) => !hasEnded(e, now)).sort(byStart)
+  const time = (iso: string) => Date.parse(iso)
   return {
-    ongoing: notEnded.filter((e) => isOngoingSeason(e, now)),
-    upcoming: notEnded.filter((e) => !isOngoingSeason(e, now)),
-    past: events.filter((e) => hasEnded(e, now)).sort((a, b) => byStart(b, a)),
+    ongoing: events
+      .filter((e) => hasStarted(e, now) && !hasEnded(e, now))
+      .sort((a, b) => time(a.endsAt) - time(b.endsAt)),
+    upcoming: events.filter((e) => !hasStarted(e, now)).sort((a, b) => time(a.startsAt) - time(b.startsAt)),
+    past: events.filter((e) => hasEnded(e, now)).sort((a, b) => time(b.startsAt) - time(a.startsAt)),
   }
 }

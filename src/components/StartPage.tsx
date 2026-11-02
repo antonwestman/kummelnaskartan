@@ -23,7 +23,7 @@ export function StartPage() {
         uppfarten eller en pulkabacke på tomten? Sätt ut ditt hus på kartan.
       </p>
 
-      {ongoing.length > 0 && <EventSection title="Just nu i området" events={ongoing} ongoing />}
+      {ongoing.length > 0 && <EventSection title="På gång" events={ongoing} ongoing />}
       {upcoming.length > 0 && <EventSection title="Kommande" events={upcoming} />}
       {past.length > 0 && <EventSection title="Tidigare event" events={past} past />}
 
@@ -38,7 +38,7 @@ export function StartPage() {
 type SectionProps = {
   title: string
   events: KummelnasEvent[]
-  /** Pågående säsonger visar "Nu" i stället för startdatum. */
+  /** Pågående event visar "Nu" i stället för startdatum. */
   ongoing?: boolean
   past?: boolean
 }

@@ -43,14 +43,12 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
    och publicera en ny version.
 3. Lägg till eventet i `src/events.ts` med samma `id`, `startsAt` och `endsAt`.
 
-### Endagsevent och säsonger
+### Kommande, På gång och Tidigare
 
-`duration` i `src/events.ts` styr hur eventet visas på startsidan:
-
-- `'one-day'` (t.ex. Halloween): listas med datum under "Kommande" tills det är slut.
-- `'season'` (t.ex. pulkabackar hela vintern): listas med datum under "Kommande" innan det börjar och under
-  "Just nu i området" medan det pågår. Grannar kan lägga in sitt hus hela perioden och släcka det de dagar
-  det inte passar. Öppettiderna gäller varje dag.
+`startsAt` och `endsAt` i `src/events.ts` styr var eventet listas på startsidan: "Kommande" innan det börjar,
+"På gång" medan det pågår och "Tidigare event" när det är slut. Ett event kan vara en kväll (Halloween) eller
+en hel vinter (pulkabackar). Under ett långt event kan grannar ha sitt hus inlagt hela perioden och släcka det
+de dagar det inte passar. Öppettiderna gäller varje dag.
 
 ### Eget datum per hus (t.ex. loppisar)
 
@@ -75,7 +73,7 @@ Koordinater får du genom att högerklicka på platsen i Google Maps. Inga ändr
 | Var | Fält | Styr |
 |---|---|---|
 | `apps-script/Code.gs` | `signupOpensAt`, `signupClosesAt` | När man kan lägga till och ändra hus. Skriptet spärrar, sidan följer. Ta bort går alltid. |
-| `src/events.ts` | `startsAt`, `endsAt` | Om eventet listas under "Kommande" eller "Tidigare event", och Event-data för Google. |
+| `src/events.ts` | `startsAt`, `endsAt` | Om eventet listas under "Kommande", "På gång" eller "Tidigare event", och Event-data för Google. |
 
 Tider skrivs med tidszon: `2026-11-01T00:00:00+01:00` (vintertid) eller `+02:00` (sommartid). Eventet får automatiskt en egen sida
    (`kummelnaskartan.se/<id>/`) med titel, beskrivning och Event-data för Google, och hamnar i sitemap.xml.
