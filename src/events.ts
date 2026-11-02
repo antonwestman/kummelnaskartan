@@ -21,7 +21,11 @@ export type PlaceLayer = {
 }
 
 export type KummelnasEvent = {
-  /** Måste vara exakt samma som fliknamnet i Google Sheet och nyckeln i EVENTS i apps-script/Code.gs. */
+  /**
+   * Måste vara exakt samma som fliknamnet i Google Sheet och nyckeln i EVENTS i apps-script/Code.gs.
+   * Blir också adressen (kummelnaskartan.se/<id>/). Event som börjar om med en tom karta får sin tid i id:t:
+   * år för en dag (halloween-2026), vinter för en säsong (pulkabackar-2026-27). Det som pågår hela tiden har ingen (loppisar).
+   */
   id: string
   title: string
   /**
@@ -33,12 +37,12 @@ export type KummelnasEvent = {
   /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
    * Styr var eventet listas på startsidan: "Kommande" före startsAt, "På gång" fram till endsAt,
-   * sedan "Tidigare event". Ett event kan vara en kväll (Halloween) eller en hel vinter (pulkabackar). När man kan lägga in hus styrs
-   * separat av EVENTS i apps-script/Code.gs.
+   * sedan "Tidigare event". Ett event kan vara en kväll (Halloween) eller en hel vinter (pulkabackar).
+   * När man kan lägga in hus styrs separat av EVENTS i apps-script/Code.gs.
    */
   startsAt: string
   endsAt: string
-  /** "Lördag 31 oktober" eller "Vintern 2026/27". */
+  /** "Lördag 31 oktober 2026" eller "Vintern 2026/27". Används också i sidtiteln för sökmotorer. */
   periodLabel: string
   summary: string
   details: string[]
@@ -57,7 +61,7 @@ export const EVENTS: KummelnasEvent[] = [
     entryDates: 'event',
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
-    periodLabel: 'Lördag 31 oktober',
+    periodLabel: 'Lördag 31 oktober 2026',
     summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som öppnat upp för bus eller godis.',
     details: ['Glöm inte reflexer.'],
     notePlaceholder: 'Har nötfritt godis',
@@ -76,7 +80,7 @@ export const EVENTS: KummelnasEvent[] = [
     places: null,
   },
   {
-    id: 'pulkabackar-2026',
+    id: 'pulkabackar-2026-27',
     title: 'Pulkabackar',
     entryDates: 'event',
     startsAt: '2026-12-01T00:00:00+01:00',
@@ -96,7 +100,7 @@ export const EVENTS: KummelnasEvent[] = [
     },
   },
   {
-    id: 'skridskor-2026',
+    id: 'skridskor-2026-27',
     title: 'Skridskor',
     entryDates: 'event',
     startsAt: '2026-12-01T00:00:00+01:00',
