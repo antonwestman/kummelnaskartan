@@ -28,6 +28,7 @@ export function PlaceList({ heading, places, total, userPosition, onShow }: Prop
               <span className="entry-text">
                 <span className="entry-address">{place.name}</span>
                 {place.note && <span className="muted">{place.note}</span>}
+                {place.warning && <span className="place-warning">{place.warning}</span>}
               </span>
               {userPosition && (
                 <span className="entry-distance">{formatDistance(distanceInMeters(userPosition, place))}</span>

@@ -565,6 +565,15 @@ details > p {
   border-radius: 4px;
 }
 
+.place-warning {
+  color: #ffd27a;
+  font-size: 0.9rem;
+}
+
+.place-warning::before {
+  content: '⚠ ';
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;

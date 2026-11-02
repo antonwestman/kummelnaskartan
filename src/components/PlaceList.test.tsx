@@ -27,3 +27,9 @@ it('renders nothing when the event has no places yet', () => {
   )
   expect(container).toBeEmptyDOMElement()
 })
+
+it('shows the warning for a place, e.g. natural ice', () => {
+  const sjon: Place = { id: 'sjon', name: 'Sjön', lat: 59.33, lng: 18.27, warning: 'Kolla isen själv.' }
+  render(<PlaceList heading="Isbanor" places={[sjon]} total={1} userPosition={null} onShow={() => {}} />)
+  expect(screen.getByText('Kolla isen själv.')).toBeInTheDocument()
+})

@@ -81,6 +81,7 @@ export function EventMap({ entries, places, loaded, myEntryId, userPosition, loc
               <strong>{place.name}</strong>
               <div className="muted">{places.label}</div>
               {place.note && <div>{place.note}</div>}
+              {place.warning && <div className="place-warning">{place.warning}</div>}
               <a href={walkingDirectionsUrl(place)} target="_blank" rel="noreferrer">
                 Vägbeskrivning
               </a>
