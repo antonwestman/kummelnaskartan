@@ -211,8 +211,8 @@ export const EVENTS: KummelnasEvent[] = [
         { id: 'vittjarn', name: 'Vittjärns klippbad', category: 'bad', season: 'summer', lat: 59.340592, lng: 18.253152 },
         { id: 'abbortrasket-utsikt', name: 'Utkiksplats vid Abborträsket', category: 'utsikt', lat: 59.331385, lng: 18.288725 },
         { id: 'abbortrasket-grill', name: 'Grillplats vid Abborträsket', category: 'grillplats', lat: 59.331637, lng: 18.286643 },
-        // Grillplats vid Karbosjön: lägg till med rätt position, t.ex.
-        // { id: 'karbosjon-grill', name: 'Grillplats vid Karbosjön', category: 'grillplats', lat: …, lng: … },
+        // Samma ställe som isen; flyttad ca 10 m norrut så att markörerna inte hamnar exakt på varandra på vintern.
+        { id: 'karbosjon-grill', name: 'Grillplats vid Karbosjön', category: 'grillplats', lat: 59.352147, lng: 18.285487 },
         ...PULKABACKAR.map((backe): Place => ({ ...backe, season: 'winter' })),
         { id: 'riset-brygga', name: 'Riset', category: 'batbrygga', lat: 59.359993, lng: 18.285518, note: 'Hållplats för skärgårdsbåtar.' },
         {
