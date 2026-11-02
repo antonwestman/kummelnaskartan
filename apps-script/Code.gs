@@ -57,8 +57,10 @@ function doGet(e) {
       .filter(function (entry) { return !isExpired_(eventId, entry); })
       .map(publicEntry_);
     var config = EVENTS[eventId];
-    var summary = null;
-    if (isEventExpired_(eventId)) {
+    // En sparad sammanställning visas alltid, även om den gjordes tidigare än vanligt (t.ex. med en manuell
+    // cleanUp). Annars skapas en först när eventet har passerat sin tid.
+    var summary = findSummary_(eventId);
+    if (!summary && isEventExpired_(eventId)) {
       var lock = LockService.getScriptLock();
       lock.waitLock(10000);
       try {
@@ -472,15 +474,24 @@ function summarize_(entries) {
   };
 }
 
-/** Sparad sammanställning för eventet, eller en ny från flikens hus om ingen finns. Körs inuti låset. */
-function ensureSummary_(eventId, sheet) {
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var summarySheet = spreadsheet.getSheetByName(SUMMARY_SHEET) || spreadsheet.insertSheet(SUMMARY_SHEET);
-  if (summarySheet.getLastRow() === 0) summarySheet.appendRow(['event', 'createdAt', 'summary']);
+/** Sparad sammanställning för eventet, eller null. Ändrar ingenting. */
+function findSummary_(eventId) {
+  var summarySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SUMMARY_SHEET);
+  if (!summarySheet || summarySheet.getLastRow() < 2) return null;
   var rows = summarySheet.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (rows[i][0] === eventId) return JSON.parse(rows[i][2]);
   }
+  return null;
+}
+
+/** Sparad sammanställning för eventet, eller en ny från flikens hus om ingen finns. Körs inuti låset. */
+function ensureSummary_(eventId, sheet) {
+  var existing = findSummary_(eventId);
+  if (existing) return existing;
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var summarySheet = spreadsheet.getSheetByName(SUMMARY_SHEET) || spreadsheet.insertSheet(SUMMARY_SHEET);
+  if (summarySheet.getLastRow() === 0) summarySheet.appendRow(['event', 'createdAt', 'summary']);
   var summary = summarize_(readRows_(sheet));
   summarySheet.appendRow([eventId, new Date().toISOString(), JSON.stringify(summary)]);
   return summary;
