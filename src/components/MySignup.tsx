@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { KummelnasEvent } from '../events'
+import type { KummelnasEvent, SignupConfig } from '../events'
 import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry, type Signup } from '../lib/api'
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
@@ -13,6 +13,7 @@ import { SignupForm } from './SignupForm'
 
 type Props = {
   event: KummelnasEvent
+  config: SignupConfig
   myRef: MyEntryRef | null
   myEntry: ShownEntry | undefined
   /** Dagens datum, "YYYY-MM-DD" – tidigaste datum man kan välja när varje hus har eget datum. */
@@ -23,10 +24,10 @@ type Props = {
   onDeleted: (id: string) => void
 }
 
-export function MySignup({ event, myRef, myEntry, today, signup, onSaved, onDeleted }: Props) {
+export function MySignup({ event, config, myRef, myEntry, today, signup, onSaved, onDeleted }: Props) {
   const [editing, setEditing] = useState(false)
   const dateField =
-    event.entryDates.kind === 'own' ? { min: today, defaultMode: event.entryDates.defaultMode } : null
+    config.dates.kind === 'own' ? { min: today, defaultMode: config.dates.defaultMode } : null
 
   if (!signup) {
     return (
@@ -49,7 +50,7 @@ export function MySignup({ event, myRef, myEntry, today, signup, onSaved, onDele
         <h2 id="signup-heading">Lägg till ditt hus</h2>
         {myRef && <p className="muted">Ditt hus finns inte längre på kartan.</p>}
         <SignupForm
-          notePlaceholder={event.notePlaceholder}
+          notePlaceholder={config.notePlaceholder}
           dateField={dateField}
           submitLabel="Lägg till på kartan"
           onSubmit={async (input) => {
@@ -67,7 +68,7 @@ export function MySignup({ event, myRef, myEntry, today, signup, onSaved, onDele
       <>
         <h2 id="signup-heading">Ändra</h2>
         <SignupForm
-          notePlaceholder={event.notePlaceholder}
+          notePlaceholder={config.notePlaceholder}
           dateField={dateField}
           initialValues={{
             address: myEntry.address,

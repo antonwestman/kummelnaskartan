@@ -65,16 +65,24 @@ Huset lyser när det är öppet (öppettiderna gäller varje dag), syns grått m
 "har varit" efter sista dagen tills det tas bort `HIDE_AFTER_DAYS` dagar senare. Tills vidare gäller tills
 huset tas bort eller eventet tar slut. Med `entryDates: { kind: 'event' }` (Halloween) finns inga datum.
 
-### Fasta platser (t.ex. allmänna pulkabackar)
+### Fasta platser (lekplatser, badplatser, allmänna pulkabackar …)
 
 Platser som ingen äger läggs in direkt i `places.items` i `src/events.ts`, inte via formuläret:
 
 ```ts
-{ id: 'kummelbacken', name: 'Kummelbacken', lat: 59.33, lng: 18.27, note: 'Flack, bra för små barn' },
+{ id: 'sagsjon-bad', name: 'Sågsjöns badplats', category: 'bad', season: 'summer', lat: 59.346, lng: 18.2806 },
 ```
 
-De syns som fyrkantiga markörer bredvid grannarnas hus, i en egen lista och i en förklaring under rubriken.
-Koordinater får du genom att högerklicka på platsen i Google Maps. Inga ändringar i Apps Script behövs.
+- `category` styr ikon och namn (`PLACE_CATEGORIES`): lekplats, bad, isbana, grillplats, utsikt, vindskydd,
+  fiske, aktivitet, båtbrygga, pulkabacke. Finns det fler än en kategori kan man filtrera.
+- `season` (valfritt): `'summer'` visas juni–augusti, `'winter'` december–mars. Utan säsong visas platsen året runt.
+- `note` och `warning` (valfria): en kort beskrivning, och en brasklapp som syns tydligt (t.ex. för naturis).
+
+Koordinater får du genom att högerklicka på platsen i Google Maps. Besökare kan tipsa om platser via en
+mejllänk under listan. Du lägger sedan in dem här.
+
+**Bara platser, inga hus:** med `signup: null` (som "Ute i Kummelnäs") finns inget formulär, och sidan hämtar
+inget från Apps Script. Ingen flik i Sheetet och ingen rad i `Code.gs` behövs.
 
 ### Tider
 

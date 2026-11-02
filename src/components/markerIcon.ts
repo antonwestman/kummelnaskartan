@@ -1,13 +1,12 @@
 import L from 'leaflet'
 
-/** place = fast plats som ingen äger, t.ex. en allmän pulkabacke. */
-export type PinVariant = 'default' | 'mine' | 'off' | 'place'
+/** Hus: tänt, ditt eget, eller släckt/stängt. Fasta platser har egna ikoner, se placeIcon. */
+export type PinVariant = 'default' | 'mine' | 'off'
 
 const icons: Record<PinVariant, L.DivIcon> = {
   default: makeIcon('default'),
   mine: makeIcon('mine'),
   off: makeIcon('off'),
-  place: makeIcon('place'),
 }
 
 function makeIcon(variant: PinVariant): L.DivIcon {
@@ -17,6 +16,23 @@ function makeIcon(variant: PinVariant): L.DivIcon {
     iconAnchor: [11, 11],
     popupAnchor: [0, -12],
   })
+}
+
+const placeIcons = new Map<string, L.DivIcon>()
+
+/** Fast plats: ljus fyrkant med kategorins ikon (emoji), en per ikon. */
+export function placeIcon(icon: string): L.DivIcon {
+  const cached = placeIcons.get(icon)
+  if (cached) return cached
+  const created = L.divIcon({
+    className: 'pin pin-place',
+    html: `<span aria-hidden="true">${icon}</span>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -15],
+  })
+  placeIcons.set(icon, created)
+  return created
 }
 
 /** Enkla runda markörer i CSS – inga bildfiler som strular med bundlers. */
