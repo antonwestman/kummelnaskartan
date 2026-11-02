@@ -512,6 +512,22 @@ details > summary {
   cursor: pointer;
 }
 
+.summary-count {
+  margin: 12px 0 4px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.about {
+  margin-top: 24px;
+}
+
+.about p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 details > p {
   margin-bottom: 8px;
 }

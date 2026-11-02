@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { EVENTS, groupEvents, type KummelnasEvent } from '../events'
 import { eventPath } from '../paths'
+import { AboutData } from './AboutData'
 
 const dayAndMonth = (iso: string) => {
   const date = new Date(iso)
@@ -31,6 +32,7 @@ export function StartPage() {
         För Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil och resten av Saltsjö-Boo. Det du lägger in syns för
         alla som besöker sidan.
       </p>
+      <AboutData />
     </main>
   )
 }

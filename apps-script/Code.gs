@@ -32,6 +32,17 @@ var TEXT_COLUMNS = ['openFrom', 'openUntil', 'date'];
 // Hur långt fram man kan välja datum när varje hus har eget datum.
 var MAX_DAYS_AHEAD = 366;
 
+// Så många dagar efter att anmälan stängt (eller efter husets eget datum) visas husen inte längre,
+// och cleanUp() raderar dem. Samma som HIDE_AFTER_DAYS i src/config.ts.
+var HIDE_AFTER_DAYS = 7;
+
+// När ett event har passerat sin tid sparas en sammanställning (antal hus och rutor) i en egen flik
+// innan husen raderas. Den kan inte nås som event via API:t, bara som sammanställning.
+var SUMMARY_SHEET = 'statistik';
+var CELL_METERS = 250;
+// Rutor med färre hus än så visas inte, så att ingen enskild går att peka ut. De räknas ändå in i totalen.
+var MIN_HOUSES_PER_CELL = 3;
+
 // Ungefärlig ruta runt Boo (Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil m.fl.).
 // Adresser utanför avvisas så att felaktiga geokodningar inte hamnar på kartan.
 var BOUNDS = { south: 59.29, west: 18.15, north: 59.39, east: 18.38 };
@@ -40,14 +51,28 @@ var MAX_LENGTH = { address: 120, name: 60, note: 200 };
 
 function doGet(e) {
   return handle_(function () {
-    var sheet = getEventSheet_(e.parameter.event);
-    var entries = readRows_(sheet).map(publicEntry_);
-    var config = EVENTS[e.parameter.event];
+    var eventId = e.parameter.event;
+    var sheet = getEventSheet_(eventId);
+    var entries = readRows_(sheet)
+      .filter(function (entry) { return !isExpired_(eventId, entry); })
+      .map(publicEntry_);
+    var config = EVENTS[eventId];
+    var summary = null;
+    if (isEventExpired_(eventId)) {
+      var lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        summary = ensureSummary_(eventId, sheet);
+      } finally {
+        lock.releaseLock();
+      }
+    }
     return {
       ok: true,
       entries: entries,
-      signup: signupState_(e.parameter.event),
-      signupOpensAt: config.signupOpensAt
+      signup: signupState_(eventId),
+      signupOpensAt: config.signupOpensAt,
+      summary: summary
     };
   });
 }
@@ -402,6 +427,96 @@ function resolvePosition_(address, position) {
   }
   var loc = results[0].geometry.location;
   return { lat: loc.lat, lng: loc.lng };
+}
+
+/**
+ * Har huset passerat sin tid? HIDE_AFTER_DAYS efter att anmälan stängt (signupClosesAt), eller för
+ * event där varje hus har eget datum: HIDE_AFTER_DAYS efter husets datum.
+ */
+function isExpired_(eventId, entry) {
+  if (isEventExpired_(eventId)) return true;
+  var config = EVENTS[eventId];
+  return Boolean(config.ownDates && entry.date && entry.date < stockholmDate_(-HIDE_AFTER_DAYS));
+}
+
+/** Hela eventet har passerat sin tid: HIDE_AFTER_DAYS efter att anmälan stängt. */
+function isEventExpired_(eventId) {
+  var closesAt = EVENTS[eventId].signupClosesAt;
+  return Boolean(closesAt) && Date.parse(closesAt) <= Date.now() - HIDE_AFTER_DAYS * 86400000;
+}
+
+/**
+ * Antal hus och hur många per ruta på ungefär CELL_METERS meter, bara rutor med minst
+ * MIN_HOUSES_PER_CELL hus. Inga adresser, namn eller exakta positioner.
+ */
+function summarize_(entries) {
+  var cellLat = CELL_METERS / 111320;
+  var cellLng = CELL_METERS / (111320 * Math.cos((BOUNDS.south + BOUNDS.north) / 2 * Math.PI / 180));
+  var counts = {};
+  entries.forEach(function (entry) {
+    var key = Math.floor(entry.lat / cellLat) + ':' + Math.floor(entry.lng / cellLng);
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  var cells = Object.keys(counts)
+    .filter(function (key) { return counts[key] >= MIN_HOUSES_PER_CELL; })
+    .map(function (key) {
+      var parts = key.split(':');
+      return { lat: (Number(parts[0]) + 0.5) * cellLat, lng: (Number(parts[1]) + 0.5) * cellLng, count: counts[key] };
+    });
+  return {
+    households: entries.length,
+    cellMeters: CELL_METERS,
+    cellSize: { lat: cellLat, lng: cellLng },
+    minPerCell: MIN_HOUSES_PER_CELL,
+    cells: cells
+  };
+}
+
+/** Sparad sammanställning för eventet, eller en ny från flikens hus om ingen finns. Körs inuti låset. */
+function ensureSummary_(eventId, sheet) {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var summarySheet = spreadsheet.getSheetByName(SUMMARY_SHEET) || spreadsheet.insertSheet(SUMMARY_SHEET);
+  if (summarySheet.getLastRow() === 0) summarySheet.appendRow(['event', 'createdAt', 'summary']);
+  var rows = summarySheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][0] === eventId) return JSON.parse(rows[i][2]);
+  }
+  var summary = summarize_(readRows_(sheet));
+  summarySheet.appendRow([eventId, new Date().toISOString(), JSON.stringify(summary)]);
+  return summary;
+}
+
+/**
+ * Raderar hus som har passerat sin tid (se isExpired_) i alla event. Körs varje natt efter
+ * att installCleanUp() har körts en gång, men går också att köra för hand från editorn.
+ */
+function cleanUp() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var dateColumn = HEADERS.indexOf('date');
+    Object.keys(EVENTS).forEach(function (eventId) {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(eventId);
+      if (!sheet || sheet.getLastRow() < 2) return;
+      // Spara sammanställningen innan husen raderas.
+      if (isEventExpired_(eventId)) ensureSummary_(eventId, sheet);
+      var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length).getValues();
+      // Nerifrån och upp, så att radnumren ovanför inte flyttas när en rad tas bort.
+      for (var i = values.length - 1; i >= 0; i--) {
+        if (isExpired_(eventId, { date: dateValue_(values[i][dateColumn]) })) sheet.deleteRow(i + 2);
+      }
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Kör en gång från editorn: kör cleanUp() varje natt. Kör du den igen ersätts den gamla schemaläggningen. */
+function installCleanUp() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'cleanUp') ScriptApp.deleteTrigger(trigger);
+  });
+  ScriptApp.newTrigger('cleanUp').timeBased().everyDays(1).atHour(3).create();
 }
 
 /** Kör en gång från editorn för att godkänna behörigheter (Sheets + Maps). */

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { SCRIPT_URL } from '../config'
-import { findEvent, type KummelnasEvent, type Place } from '../events'
+import { findEvent, hasEnded, type KummelnasEvent, type Place } from '../events'
 import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
-import type { Entry } from '../lib/api'
+import type { Entry, Summary } from '../lib/api'
 import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { matchesQuery, sortByAddress } from '../lib/search'
 import { trackEvent, type AnalyticsEvent } from '../lib/analytics'
@@ -14,6 +14,7 @@ import { stockholmDate } from '../lib/dates'
 import { stockholmMinutes } from '../lib/hours'
 import { sortForDisplay, withStatus } from '../lib/status'
 import { eventSeo } from '../seo'
+import { AboutData } from './AboutData'
 import { EntryList } from './EntryList'
 import { EventMap, type Selection } from './EventMap'
 import { entryMarkerId, placeMarkerId } from './markerIcon'
@@ -60,6 +61,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
 
   const now = useNow(60_000)
   const rawEntries = state.status === 'ready' ? state.entries : []
+  const summary = state.status === 'ready' && state.summary && state.summary.households > 0 ? state.summary : null
   const today = { date: stockholmDate(now), minutes: stockholmMinutes(now) }
   // Status (tänd/släckt/stängd/kommande/har varit) räknas fram vid varje render – inget sparas.
   const allEntries = withStatus(rawEntries, today)
@@ -163,6 +165,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
         <EventMap
           entries={searchedEntries}
           places={event.places && { ...event.places, items: searchedPlaces }}
+          summary={summary}
           loaded={!configured || state.status !== 'loading'}
           myEntryId={myEntry?.id ?? null}
           userPosition={userPosition}
@@ -201,6 +204,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
           <h1>{event.title}</h1>
           <p className="muted">{event.periodLabel}</p>
           <p>{event.summary}</p>
+          {summary && <SummaryText summary={summary} />}
           {event.details.map((d) => (
             <p key={d} className="muted small">
               {d}
@@ -241,16 +245,20 @@ function EventView({ event }: { event: KummelnasEvent }) {
           <>
             {/* Har man redan ett hus ligger "Ditt hus" överst, så att Släck/Ändra inte hamnar under en lång lista. */}
             {myEntry && signupSection}
-            <EntryList
-              entries={sortedEntries}
-              myEntryId={myEntry?.id ?? null}
-              userPosition={userPosition}
-              radius={activeRadius}
-              query={query}
-              onQueryChange={changeQuery}
-              loading={state.status === 'loading'}
-              onShow={showEntry}
-            />
+            {/* När husen har raderats står sammanställningen överst i stället för en tom lista. */}
+            {!(summary && entries.length === 0) && (
+              <EntryList
+                entries={sortedEntries}
+                myEntryId={myEntry?.id ?? null}
+                userPosition={userPosition}
+                radius={activeRadius}
+                query={query}
+                onQueryChange={changeQuery}
+                loading={state.status === 'loading'}
+                ended={hasEnded(event, now)}
+                onShow={showEntry}
+              />
+            )}
           </>
         )}
 
@@ -265,7 +273,24 @@ function EventView({ event }: { event: KummelnasEvent }) {
         )}
 
         {configured && state.status !== 'error' && !myEntry && signupSection}
+
+        <AboutData />
       </div>
+    </div>
+  )
+}
+
+function SummaryText({ summary }: { summary: Summary }) {
+  return (
+    <div className="summary">
+      <p className="summary-count">
+        {summary.households} hushåll var med
+      </p>
+      {summary.cells.length > 0 && (
+        <p className="muted small">
+          Kartan visar ungefär var, i rutor på {summary.cellMeters} meter. Rutor med färre än {summary.minPerCell} hus visas inte.
+        </p>
+      )}
     </div>
   )
 }

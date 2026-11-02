@@ -88,24 +88,42 @@ export type Signup =
   | { status: 'closed' }
   | { status: 'notYetOpen'; opensAt: string | null }
 
+const SummarySchema = z.object({
+  households: z.number(),
+  /** Rutornas storlek i meter och i grader. */
+  cellMeters: z.number(),
+  cellSize: z.object({ lat: z.number(), lng: z.number() }),
+  /** Rutor med färre hus än så skickas inte. */
+  minPerCell: z.number(),
+  /** Rutornas mittpunkt och antal hus. */
+  cells: z.array(z.object({ lat: z.number(), lng: z.number(), count: z.number() })),
+})
+
+/** Sammanställning för ett event som har passerat sin tid: antal hus och ungefär var, inga adresser. */
+export type Summary = z.infer<typeof SummarySchema>
+
 const ListSchema = z.object({
   ok: z.literal(true),
   entries: z.array(EntrySchema),
   // Saknas i äldre versioner av skriptet – då räknas anmälan som öppen.
   signup: SignupStateSchema.optional(),
   signupOpensAt: z.string().nullable().optional(),
+  // Saknas i äldre versioner av skriptet och innan eventet har passerat sin tid.
+  summary: SummarySchema.nullable().optional(),
 })
 const EntryResponseSchema = z.object({ ok: z.literal(true), entry: EntrySchema })
 const CreatedSchema = EntryResponseSchema.extend({ token: z.string() })
 const OkSchema = z.object({ ok: z.literal(true) })
 
-export async function fetchEntries(eventId: string): Promise<{ entries: Entry[]; signup: Signup }> {
+export async function fetchEntries(
+  eventId: string,
+): Promise<{ entries: Entry[]; signup: Signup; summary: Summary | null }> {
   const data = await request(ListSchema, undefined, `?event=${encodeURIComponent(eventId)}`)
   const signup: Signup =
     data.signup === 'notYetOpen'
       ? { status: 'notYetOpen', opensAt: data.signupOpensAt ?? null }
       : { status: data.signup ?? 'open' }
-  return { entries: data.entries, signup }
+  return { entries: data.entries, signup, summary: data.summary ?? null }
 }
 
 export async function createEntry(eventId: string, input: EntryInput): Promise<{ entry: Entry; token: string }> {
