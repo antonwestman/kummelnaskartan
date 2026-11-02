@@ -288,7 +288,7 @@ function SummaryText({ summary }: { summary: Summary }) {
       </p>
       {summary.cells.length > 0 && (
         <p className="muted small">
-          Kartan visar ungefär var, i rutor på {summary.cellMeters} meter. Rutor med färre än {summary.minPerCell} hus visas inte.
+          Kartan visar ungefär var, utifrån rutor på {summary.cellMeters} meter. Rutor med färre än {summary.minPerCell} hus visas inte.
         </p>
       )}
     </div>
