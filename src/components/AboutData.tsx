@@ -5,7 +5,7 @@ export function AboutData() {
   return (
     <details className="about">
       <summary>Om kartan och dina uppgifter</summary>
-      <p>Kummelnäskartan görs av grannar för grannar, utan reklam och utan cookies.</p>
+      <p>Kummelnäskartan görs av grannar för grannar, utan annonser och utan spårning.</p>
       <p>
         Adressen, namnet, meddelandet och tiderna du lägger in syns för alla som besöker sidan. Skriv bara det du vill
         visa. Uppgifterna sparas i ett Google Sheet som bara den som sköter kartan kommer åt.
