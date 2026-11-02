@@ -10,6 +10,13 @@ export const SCRIPT_URL: string =
 export const KUMMELNAS_CENTER = { lat: 59.3545, lng: 18.2685 } as const
 
 /**
+ * Området kartan handlar om. Utanför det ligger en mörk dimma över kartan, så att Kummelnäs syns tydligt.
+ * Hus och platser utanför syns ändå (Code.gs tar emot adresser i hela Boo), bara bakgrunden mörknar.
+ * En cirkel är en förenkling: justera mitt och radie tills den täcker det ni räknar som Kummelnäs.
+ */
+export const FOCUS_AREA = { center: KUMMELNAS_CENTER, radiusMeters: 1500 } as const
+
+/**
  * OpenStreetMaps vanliga kartbilder (kräver ingen API-nyckel).
  * De görs mörka med ett CSS-filter, se `.leaflet-tile-pane` i index.css.
  */
