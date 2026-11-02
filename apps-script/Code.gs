@@ -10,12 +10,12 @@
 // när det går att lägga till eller ändra hus. Andra flikar i Sheetet kan aldrig nås.
 // Tider anges med tidszon: +01:00 vintertid, +02:00 sommartid. null = ingen gräns åt det hållet.
 // Att ta bort sitt hus går alltid.
-// ownDates: true = varje hus väljer eget datum (t.ex. loppisar). Samma som entryDates: 'own' i src/events.ts.
+// ownDates: true = varje hus väljer själv när det är öppet: tills vidare, en dag eller en period
+// (loppisar, pulkabackar). Samma som entryDates.kind === 'own' i src/events.ts.
 var EVENTS = {
   'halloween-2026': { signupOpensAt: null, signupClosesAt: '2026-11-01T00:00:00+01:00' },
   'loppisar': { signupOpensAt: null, signupClosesAt: null, ownDates: true },
-  'pulkabackar-2026-27': { signupOpensAt: null, signupClosesAt: '2027-04-01T00:00:00+02:00' },
-  'skridskor-2026-27': { signupOpensAt: null, signupClosesAt: '2027-04-01T00:00:00+02:00' }
+  'pulkabackar-2026-27': { signupOpensAt: null, signupClosesAt: '2027-04-01T00:00:00+02:00', ownDates: true }
 };
 
 // Skydd mot skräpposter. Gäller totalt för alla besökare (Apps Script ser inte IP-adresser).
@@ -24,15 +24,16 @@ var MAX_ENTRIES_PER_EVENT = 300;
 
 // 'paused' = huset är släckt (syns grått på kartan).
 // 'openFrom'/'openUntil' = valfria klockslag "HH:MM", lagras som text.
-// 'date' = husets eget datum "YYYY-MM-DD" (bara event med ownDates), lagras som text.
+// 'date'/'dateTo' = när huset är öppet, "YYYY-MM-DD" (bara event med ownDates), lagras som text:
+//   båda tomma = tills vidare, bara date = en dag, båda = en period.
 // Nya kolumner läggs till automatiskt i befintliga flikar.
-var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused', 'openFrom', 'openUntil', 'date'];
-var TEXT_COLUMNS = ['openFrom', 'openUntil', 'date'];
+var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused', 'openFrom', 'openUntil', 'date', 'dateTo'];
+var TEXT_COLUMNS = ['openFrom', 'openUntil', 'date', 'dateTo'];
 
 // Hur långt fram man kan välja datum när varje hus har eget datum.
 var MAX_DAYS_AHEAD = 366;
 
-// Så många dagar efter att anmälan stängt (eller efter husets eget datum) visas husen inte längre,
+// Så många dagar efter att anmälan stängt (eller efter husets sista dag) visas husen inte längre,
 // och cleanUp() raderar dem. Samma som HIDE_AFTER_DAYS i src/config.ts.
 var HIDE_AFTER_DAYS = 7;
 
@@ -57,8 +58,10 @@ function doGet(e) {
       .filter(function (entry) { return !isExpired_(eventId, entry); })
       .map(publicEntry_);
     var config = EVENTS[eventId];
-    var summary = null;
-    if (isEventExpired_(eventId)) {
+    // En sparad sammanställning visas alltid, även om den gjordes tidigare än vanligt (t.ex. med en manuell
+    // cleanUp). Annars skapas en först när eventet har passerat sin tid.
+    var summary = findSummary_(eventId);
+    if (!summary && isEventExpired_(eventId)) {
       var lock = LockService.getScriptLock();
       lock.waitLock(10000);
       try {
@@ -115,7 +118,7 @@ function create_(sheet, body) {
   checkRateLimit_(body.event);
   var fields = cleanFields_(body);
   rejectDuplicate_(sheet, fields.address, null);
-  var date = entryDate_(body.event, body.date);
+  var dates = entryDates_(body.event, body.date, body.dateTo);
   var position = resolvePosition_(fields.address, body.position);
   var now = new Date().toISOString();
   var entry = {
@@ -131,7 +134,8 @@ function create_(sheet, body) {
     paused: false,
     openFrom: fields.openFrom,
     openUntil: fields.openUntil,
-    date: date
+    date: dates.date,
+    dateTo: dates.dateTo
   };
   sheet.appendRow(HEADERS.map(function (h) { return entry[h]; }));
   return { ok: true, entry: publicEntry_(entry), token: entry.token };
@@ -142,7 +146,7 @@ function update_(sheet, body) {
   var row = findByToken_(sheet, body.token);
   var fields = cleanFields_(body);
   rejectDuplicate_(sheet, fields.address, row.entry.id);
-  var date = entryDate_(body.event, body.date);
+  var dates = entryDates_(body.event, body.date, body.dateTo);
   var position = fields.address === row.entry.address && !body.position
     ? { lat: row.entry.lat, lng: row.entry.lng }
     : resolvePosition_(fields.address, body.position);
@@ -155,7 +159,8 @@ function update_(sheet, body) {
   entry.note = fields.note;
   entry.openFrom = fields.openFrom;
   entry.openUntil = fields.openUntil;
-  entry.date = date;
+  entry.date = dates.date;
+  entry.dateTo = dates.dateTo;
   writeRow_(sheet, row.rowNumber, entry);
   return { ok: true, entry: publicEntry_(entry) };
 }
@@ -263,6 +268,7 @@ function readRows_(sheet) {
       entry.openFrom = timeValue_(entry.openFrom);
       entry.openUntil = timeValue_(entry.openUntil);
       entry.date = dateValue_(entry.date);
+      entry.dateTo = dateValue_(entry.dateTo);
       return entry;
     })
     .filter(function (entry) { return entry.id && isFinite(entry.lat) && isFinite(entry.lng); });
@@ -319,6 +325,7 @@ function publicEntry_(entry) {
     openFrom: entry.openFrom || '',
     openUntil: entry.openUntil || '',
     date: entry.date || '',
+    dateTo: entry.dateTo || '',
     updatedAt: String(entry.updatedAt)
   };
 }
@@ -338,15 +345,31 @@ function stockholmDate_(daysAhead) {
   return Utilities.formatDate(new Date(Date.now() + (daysAhead || 0) * 86400000), 'Europe/Stockholm', 'yyyy-MM-dd');
 }
 
-/** Husets datum: krävs för event med ownDates (från idag och ett år framåt), annars alltid ''. */
-function entryDate_(eventId, value) {
-  if (!EVENTS[eventId].ownDates) return '';
-  var date = String(value || '').trim();
-  var valid = /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date + 'T12:00:00Z'));
-  if (!valid) throw userError_('bad_request', 'Välj ett datum.');
-  if (date < stockholmDate_(0)) throw userError_('bad_request', 'Datumet har redan varit.');
-  if (date > stockholmDate_(MAX_DAYS_AHEAD)) throw userError_('bad_request', 'Datumet ligger för långt fram.');
-  return date;
+/**
+ * När huset är öppet, för event med ownDates: båda tomma (tills vidare), bara date (en dag) eller
+ * båda (en period). Sista dagen får inte ha varit och får ligga högst ett år fram. Andra event: alltid tomt.
+ */
+function entryDates_(eventId, dateValue, dateToValue) {
+  if (!EVENTS[eventId].ownDates) return { date: '', dateTo: '' };
+  var date = String(dateValue || '').trim();
+  var dateTo = String(dateToValue || '').trim();
+  if (!date && !dateTo) return { date: '', dateTo: '' };
+  if (!isDate_(date)) throw userError_('bad_request', 'Välj ett datum.');
+  if (dateTo && !isDate_(dateTo)) throw userError_('bad_request', 'Välj ett slutdatum.');
+  if (dateTo && dateTo < date) throw userError_('bad_request', 'Slutdatumet ligger före startdatumet.');
+  var last = dateTo || date;
+  if (last < stockholmDate_(0)) throw userError_('bad_request', 'Datumet har redan varit.');
+  if (last > stockholmDate_(MAX_DAYS_AHEAD)) throw userError_('bad_request', 'Datumet ligger för långt fram.');
+  return { date: date, dateTo: dateTo };
+}
+
+function isDate_(text) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) && !isNaN(Date.parse(text + 'T12:00:00Z'));
+}
+
+/** Husets sista dag, eller '' om det är öppet tills vidare. */
+function lastDate_(entry) {
+  return entry.dateTo || entry.date || '';
 }
 
 /**
@@ -357,8 +380,8 @@ function rejectDuplicate_(sheet, address, ownId) {
   var key = normalizeAddress_(address);
   var today = stockholmDate_(0);
   var taken = readRows_(sheet).some(function (entry) {
-    // Ett hus vars dag har varit räknas inte: då kan man lägga in en ny dag även från en annan telefon.
-    var over = entry.date && entry.date < today;
+    // Ett hus vars sista dag har varit räknas inte: då kan man lägga in det igen även från en annan telefon.
+    var over = lastDate_(entry) && lastDate_(entry) < today;
     return entry.id !== ownId && !over && normalizeAddress_(entry.address) === key;
   });
   if (taken) {
@@ -431,12 +454,13 @@ function resolvePosition_(address, position) {
 
 /**
  * Har huset passerat sin tid? HIDE_AFTER_DAYS efter att anmälan stängt (signupClosesAt), eller för
- * event där varje hus har eget datum: HIDE_AFTER_DAYS efter husets datum.
+ * event där varje hus väljer själv: HIDE_AFTER_DAYS efter husets sista dag (aldrig för tills vidare).
  */
 function isExpired_(eventId, entry) {
   if (isEventExpired_(eventId)) return true;
   var config = EVENTS[eventId];
-  return Boolean(config.ownDates && entry.date && entry.date < stockholmDate_(-HIDE_AFTER_DAYS));
+  var last = lastDate_(entry);
+  return Boolean(config.ownDates && last && last < stockholmDate_(-HIDE_AFTER_DAYS));
 }
 
 /** Hela eventet har passerat sin tid: HIDE_AFTER_DAYS efter att anmälan stängt. */
@@ -472,15 +496,24 @@ function summarize_(entries) {
   };
 }
 
-/** Sparad sammanställning för eventet, eller en ny från flikens hus om ingen finns. Körs inuti låset. */
-function ensureSummary_(eventId, sheet) {
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var summarySheet = spreadsheet.getSheetByName(SUMMARY_SHEET) || spreadsheet.insertSheet(SUMMARY_SHEET);
-  if (summarySheet.getLastRow() === 0) summarySheet.appendRow(['event', 'createdAt', 'summary']);
+/** Sparad sammanställning för eventet, eller null. Ändrar ingenting. */
+function findSummary_(eventId) {
+  var summarySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SUMMARY_SHEET);
+  if (!summarySheet || summarySheet.getLastRow() < 2) return null;
   var rows = summarySheet.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (rows[i][0] === eventId) return JSON.parse(rows[i][2]);
   }
+  return null;
+}
+
+/** Sparad sammanställning för eventet, eller en ny från flikens hus om ingen finns. Körs inuti låset. */
+function ensureSummary_(eventId, sheet) {
+  var existing = findSummary_(eventId);
+  if (existing) return existing;
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var summarySheet = spreadsheet.getSheetByName(SUMMARY_SHEET) || spreadsheet.insertSheet(SUMMARY_SHEET);
+  if (summarySheet.getLastRow() === 0) summarySheet.appendRow(['event', 'createdAt', 'summary']);
   var summary = summarize_(readRows_(sheet));
   summarySheet.appendRow([eventId, new Date().toISOString(), JSON.stringify(summary)]);
   return summary;
@@ -495,6 +528,7 @@ function cleanUp() {
   lock.waitLock(30000);
   try {
     var dateColumn = HEADERS.indexOf('date');
+    var dateToColumn = HEADERS.indexOf('dateTo');
     Object.keys(EVENTS).forEach(function (eventId) {
       var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(eventId);
       if (!sheet || sheet.getLastRow() < 2) return;
@@ -503,7 +537,8 @@ function cleanUp() {
       var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length).getValues();
       // Nerifrån och upp, så att radnumren ovanför inte flyttas när en rad tas bort.
       for (var i = values.length - 1; i >= 0; i--) {
-        if (isExpired_(eventId, { date: dateValue_(values[i][dateColumn]) })) sheet.deleteRow(i + 2);
+        var dates = { date: dateValue_(values[i][dateColumn]), dateTo: dateValue_(values[i][dateToColumn]) };
+        if (isExpired_(eventId, dates)) sheet.deleteRow(i + 2);
       }
     });
   } finally {

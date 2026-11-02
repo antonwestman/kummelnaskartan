@@ -4,7 +4,8 @@ import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry,
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { displayAddress } from '../lib/address'
-import { formatEntryDate } from '../lib/dates'
+import { HIDE_AFTER_DAYS } from '../config'
+import { formatEntryDates } from '../lib/dates'
 import { EntryDetails } from './EntryList'
 import { formatHours } from '../lib/hours'
 import type { ShownEntry } from '../lib/status'
@@ -24,7 +25,8 @@ type Props = {
 
 export function MySignup({ event, myRef, myEntry, today, signup, onSaved, onDeleted }: Props) {
   const [editing, setEditing] = useState(false)
-  const dateField = event.entryDates === 'own' ? { min: today } : null
+  const dateField =
+    event.entryDates.kind === 'own' ? { min: today, defaultMode: event.entryDates.defaultMode } : null
 
   if (!signup) {
     return (
@@ -74,6 +76,7 @@ export function MySignup({ event, myRef, myEntry, today, signup, onSaved, onDele
             openFrom: myEntry.openFrom,
             openUntil: myEntry.openUntil,
             date: myEntry.date,
+            dateTo: myEntry.dateTo,
           }}
           submitLabel="Spara ändringar"
           onSubmit={async (input) => {
@@ -105,7 +108,7 @@ const HEADINGS: Record<ShownEntry['status'], string> = {
   paused: 'Ditt hus är släckt',
   closed: 'Ditt hus är stängt',
   later: 'Du är med på kartan',
-  past: 'Dagen har varit',
+  past: 'Sista dagen har varit',
 }
 
 const formatOpensAt = (iso: string) =>
@@ -213,9 +216,12 @@ function MyEntrySummary({
       <p className="muted small">
         {entry.status === 'open' && 'Inte hemma eller passar det inte just nu? Släck huset så syns det grått på kartan.'}
         {entry.status === 'paused' && 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'}
-        {entry.status === 'later' && `Huset lyser på kartan ${formatEntryDate(entry.date)}. Fram till dess syns det grått.`}
+        {entry.status === 'later' &&
+          `Huset lyser på kartan ${formatEntryDates(entry)}. Fram till dess syns det grått.`}
         {entry.status === 'past' &&
-          `Huset syns inte längre på kartan.${onEdit ? ' Ändra datum så kommer det tillbaka.' : ''}`}
+          `Huset syns grått på kartan och tas bort efter ${HIDE_AFTER_DAYS} dagar.${
+            onEdit ? ' Ändra datum så lyser det igen.' : ''
+          }`}
         {entry.status === 'closed' &&
           `Öppet ${formatHours({ openFrom: '', openUntil: entry.openUntil })} har passerat, så huset syns grått på kartan.${
             onEdit ? ' Har du öppet längre kan du ändra tiden.' : ''

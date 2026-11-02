@@ -5,7 +5,7 @@ import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position, Summary } from '../lib/api'
-import { formatEntryDate } from '../lib/dates'
+import { formatEntryDates } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { heatColor, heatOpacity, metersPerPixel } from '../lib/summary'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
@@ -74,7 +74,7 @@ export function EventMap({
               <strong>{displayAddress(entry.address)}</strong>
               {places && <div className="muted">{places.entryLabel}</div>}
               {statusLabel && <div className="muted">{capitalize(statusLabel)}</div>}
-              {entry.date && <div>{capitalize(formatEntryDate(entry.date))}</div>}
+              {entry.date && <div>{capitalize(formatEntryDates(entry))}</div>}
               {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
               {entry.name && <div>{entry.name}</div>}
               {entry.note && <div className="muted">{entry.note}</div>}

@@ -6,7 +6,7 @@ export type Place = {
   lat: number
   lng: number
   note?: string
-  /** Brasklapp som syns tydligt i listan och på kartan, t.ex. för plogad naturis som ingen kontrollerar. */
+  /** Brasklapp som syns tydligt i listan och på kartan, t.ex. om något kräver extra försiktighet. */
   warning?: string
 }
 
@@ -20,6 +20,9 @@ export type PlaceLayer = {
   items: Place[]
 }
 
+/** Hur ett hus anger när det är öppet: tills vidare, en dag eller en period. */
+export type DateMode = 'ongoing' | 'day' | 'period'
+
 export type KummelnasEvent = {
   /**
    * Måste vara exakt samma som fliknamnet i Google Sheet och nyckeln i EVENTS i apps-script/Code.gs.
@@ -29,11 +32,12 @@ export type KummelnasEvent = {
   id: string
   title: string
   /**
-   * 'event': alla hus gäller eventets dag eller hela perioden (Halloween, pulkabackar).
-   * 'own': varje hus väljer sitt eget datum inom perioden och lyser bara den dagen (loppisar).
+   * 'event': alla hus gäller eventets kväll (Halloween).
+   * 'own': varje hus väljer själv när det är öppet – tills vidare, en dag eller en period (loppisar,
+   * pulkabackar). defaultMode är det som är förvalt i formuläret.
    * Måste stämma med ownDates i EVENTS i apps-script/Code.gs.
    */
-  entryDates: 'event' | 'own'
+  entryDates: { kind: 'event' } | { kind: 'own'; defaultMode: DateMode }
   /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
    * Styr var eventet listas på startsidan: "Kommande" före startsAt, "På gång" fram till endsAt,
@@ -51,14 +55,11 @@ export type KummelnasEvent = {
   places: PlaceLayer | null
 }
 
-/** Brasklapp för plogad naturis. */
-export const NATURAL_ICE_WARNING = 'Naturis som ingen kontrollerar. Kolla isen själv innan du går ut, och åk aldrig ensam.'
-
 export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
     title: 'Trick or treat',
-    entryDates: 'event',
+    entryDates: { kind: 'event' },
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
     periodLabel: 'Lördag 31 oktober 2026',
@@ -70,25 +71,30 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'loppisar',
     title: 'Loppisar',
-    entryDates: 'own',
+    entryDates: { kind: 'own', defaultMode: 'day' },
     startsAt: '2026-11-01T00:00:00+01:00',
     endsAt: '2028-01-01T00:00:00+01:00',
     periodLabel: 'Året runt',
-    summary: 'Har du loppis på uppfarten? Lägg in dagen, så lyser huset på kartan när det är dags.',
-    details: ['Huset lyser bara den dag loppisen är. Kommande loppisar syns gråa med datum.'],
+    summary: 'Har du loppis på uppfarten? Lägg in när, så lyser huset på kartan när det är dags.',
+    details: [
+      'Välj en dag, en period eller tills vidare. Huset lyser när loppisen är öppen. Före och efter syns det grått med datum.',
+    ],
     notePlaceholder: 'Barnkläder, leksaker och böcker',
     places: null,
   },
   {
     id: 'pulkabackar-2026-27',
     title: 'Pulkabackar',
-    entryDates: 'event',
+    entryDates: { kind: 'own', defaultMode: 'ongoing' },
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
     periodLabel: 'Vintern 2026/27',
     summary:
       'Allmänna backar och trädgårdar där grannar bjuder in till pulkaåkning. Är en trädgård släckt passar det inte just idag.',
-    details: ['Har du en backe på tomten som andra får åka i? Lägg till ditt hus.', 'Fråga gärna innan ni går in på någons tomt.'],
+    details: [
+      'Har du en backe på tomten som andra får åka i? Lägg till ditt hus, tills vidare eller för en period när det är bra snö.',
+      'Fråga gärna innan ni går in på någons tomt.',
+    ],
     notePlaceholder: 'Kom in via grinden, ring gärna på',
     places: {
       label: 'Allmän backe',
@@ -97,38 +103,6 @@ export const EVENTS: KummelnasEvent[] = [
       // Lägg till allmänna backar här, t.ex.:
       // { id: 'kummelbacken', name: 'Kummelbacken', lat: 59.33, lng: 18.27, note: 'Flack, bra för små barn' },
       items: [],
-    },
-  },
-  {
-    id: 'skridskor-2026-27',
-    title: 'Skridskor',
-    entryDates: 'event',
-    startsAt: '2026-12-01T00:00:00+01:00',
-    endsAt: '2027-04-01T00:00:00+02:00',
-    periodLabel: 'Vintern 2026/27',
-    summary:
-      'Isbanor i området och grannar som spolat en bana på tomten. Är en tomt släckt passar det inte just idag.',
-    details: [
-      'Ingen här kontrollerar isen. På sjöarna åker du på egen risk: kolla isläget själv, ha isdubbar och åk inte ensam.',
-      'Fråga gärna innan ni går in på någons tomt.',
-    ],
-    notePlaceholder: 'Ta med egna skridskor',
-    places: {
-      label: 'Isbana',
-      heading: 'Isbanor',
-      entryLabel: 'Granne som bjuder in',
-      // Lägg till isbanor här. Naturis får alltid en brasklapp, t.ex.:
-      // { id: 'skolans-bana', name: 'Skolans isbana', lat: 59.33, lng: 18.27, note: 'Spolas när det är kallt' },
-      items: [
-        {
-          id: 'karbosjon',
-          name: 'Karbosjön',
-          lat: 59.352057,
-          lng: 18.285473,
-          note: 'Brukar plogas när isen har lagt sig.',
-          warning: NATURAL_ICE_WARNING,
-        },
-      ],
     },
   },
 ]

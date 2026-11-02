@@ -57,12 +57,13 @@ platser som backar och isbanor följer med i koden). Loppisar pågår hela tiden
 en hel vinter (pulkabackar). Under ett långt event kan grannar ha sitt hus inlagt hela perioden och släcka det
 de dagar det inte passar. Öppettiderna gäller varje dag.
 
-### Eget datum per hus (t.ex. loppisar)
+### När husen är öppna (loppisar, pulkabackar)
 
-Med `entryDates: 'own'` i `src/events.ts` och `ownDates: true` i `apps-script/Code.gs` väljer varje hus sitt
-eget datum i formuläret. Huset lyser på kartan bara den dagen (öppettiderna gäller då), syns grått med datum
-innan och försvinner från kartan när dagen har varit. Den som lagt in huset kan ändra datum för nästa gång.
-Raden ligger kvar i Sheetet tills någon tar bort den.
+Med `entryDates: { kind: 'own', defaultMode }` i `src/events.ts` och `ownDates: true` i `apps-script/Code.gs`
+väljer varje hus själv i formuläret: **tills vidare**, **en dag** eller **en period** (`defaultMode` är förvalt).
+Huset lyser när det är öppet (öppettiderna gäller varje dag), syns grått med datum innan, och grått med
+"har varit" efter sista dagen tills det tas bort `HIDE_AFTER_DAYS` dagar senare. Tills vidare gäller tills
+huset tas bort eller eventet tar slut. Med `entryDates: { kind: 'event' }` (Halloween) finns inga datum.
 
 ### Fasta platser (t.ex. allmänna pulkabackar)
 
@@ -87,10 +88,10 @@ Tider skrivs med tidszon: `2026-11-01T00:00:00+01:00` (vintertid) eller `+02:00`
 
 ### Kolumner i Sheetet
 
-`id`, `token`, `createdAt`, `updatedAt`, `address`, `lat`, `lng`, `name`, `note`, `paused`, `openFrom`, `openUntil`, `date`.
+`id`, `token`, `createdAt`, `updatedAt`, `address`, `lat`, `lng`, `name`, `note`, `paused`, `openFrom`, `openUntil`, `date`, `dateTo`.
 Nya kolumner läggs till automatiskt. `paused` = TRUE/FALSE (släckt hus). `openFrom`/`openUntil` = klockslag
 som `17:00` (kolumnerna sätts till ren text så att Sheets inte gör om dem). När `openUntil` har passerat visas
-huset som stängt. `date` = husets eget datum som `2026-11-14` (bara event med eget datum per hus, annars tom).
+huset som stängt. `date`/`dateTo` = när huset är öppet, som `2026-11-14`: båda tomma = tills vidare, bara `date` = en dag, båda = en period.
 
 ## Sidor och sökmotorer
 
