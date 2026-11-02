@@ -43,6 +43,13 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
    och publicera en ny version.
 3. Lägg till eventet i `src/events.ts` med samma `id`, `startsAt` och `endsAt`.
 
+### Tid i id:t
+
+Varje gång ett event kommer tillbaka blir det ett nytt event med en ny flik och en tom karta, så att inga
+gamla hus ligger kvar. Tiden står i id:t: år för en dag (`halloween-2026`), vinter för en säsong
+(`pulkabackar-2026-27`). Nästa vinter kopierar du eventet till `pulkabackar-2027-28` med nya datum (fasta
+platser som backar och isbanor följer med i koden). Loppisar pågår hela tiden och har ingen tid i id:t.
+
 ### Kommande, På gång och Tidigare
 
 `startsAt` och `endsAt` i `src/events.ts` styr var eventet listas på startsidan: "Kommande" innan det börjar,
