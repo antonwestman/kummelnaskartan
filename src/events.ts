@@ -1,7 +1,32 @@
+/** En plats som ingen äger, t.ex. en allmän pulkabacke. Läggs in här i koden, inte via formuläret. */
+export type Place = {
+  /** Unikt inom eventet. */
+  id: string
+  name: string
+  lat: number
+  lng: number
+  note?: string
+}
+
+export type PlaceLayer = {
+  /** Vad platserna kallas på kartan och i listan, t.ex. "Allmän backe". */
+  label: string
+  /** Rubrik för listan, t.ex. "Allmänna backar". */
+  heading: string
+  /** Vad grannarnas hus kallas bredvid platserna, t.ex. "Granne som bjuder in". */
+  entryLabel: string
+  items: Place[]
+}
+
 export type KummelnasEvent = {
   /** Måste vara exakt samma som fliknamnet i Google Sheet och nyckeln i EVENTS i apps-script/Code.gs. */
   id: string
   title: string
+  /**
+   * 'one-day': en dag eller kväll, listas med datum under "På gång".
+   * 'season': pågår länge (t.ex. hela vintern), listas under "Just nu i området" medan det pågår.
+   */
+  duration: 'one-day' | 'season'
   /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
    * Efter endsAt listas eventet under "Tidigare event". När man kan lägga in hus styrs
@@ -9,22 +34,47 @@ export type KummelnasEvent = {
    */
   startsAt: string
   endsAt: string
-  dateLabel: string
+  /** "Lördag 31 oktober" eller "Vintern 2026/27". */
+  periodLabel: string
   summary: string
   details: string[]
   notePlaceholder: string
+  /** Fasta platser som visas bredvid grannarnas hus, eller null. */
+  places: PlaceLayer | null
 }
 
 export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
     title: 'Trick or treat',
+    duration: 'one-day',
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
-    dateLabel: 'Lördag 31 oktober',
+    periodLabel: 'Lördag 31 oktober',
     summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som öppnat upp för bus eller godis.',
     details: ['Glöm inte reflexer.'],
     notePlaceholder: 'Har nötfritt godis',
+    places: null,
+  },
+  {
+    id: 'pulkabackar-2026',
+    title: 'Pulkabackar',
+    duration: 'season',
+    startsAt: '2026-12-01T00:00:00+01:00',
+    endsAt: '2027-04-01T00:00:00+02:00',
+    periodLabel: 'Vintern 2026/27',
+    summary:
+      'Allmänna backar och trädgårdar där grannar bjuder in till pulkaåkning. Är en trädgård släckt passar det inte just idag.',
+    details: ['Har du en backe på tomten som andra får åka i? Lägg till ditt hus.', 'Fråga gärna innan ni går in på någons tomt.'],
+    notePlaceholder: 'Kom in via grinden, ring gärna på',
+    places: {
+      label: 'Allmän backe',
+      heading: 'Allmänna backar',
+      entryLabel: 'Granne som bjuder in',
+      // Lägg till allmänna backar här, t.ex.:
+      // { id: 'kummelbacken', name: 'Kummelbacken', lat: 59.33, lng: 18.27, note: 'Flack, bra för små barn' },
+      items: [],
+    },
   },
 ]
 
@@ -34,11 +84,19 @@ export function findEvent(id: string): KummelnasEvent | undefined {
 
 export const hasEnded = (event: KummelnasEvent, now: number) => now >= Date.parse(event.endsAt)
 
-/** På gång: inte slut än, närmast först. Tidigare: slut, senaste först. */
+const isOngoingSeason = (event: KummelnasEvent, now: number) =>
+  event.duration === 'season' && now >= Date.parse(event.startsAt) && !hasEnded(event, now)
+
+/**
+ * Just nu: säsonger som pågår. På gång: allt annat som inte är slut, närmast först.
+ * Tidigare: slut, senaste först.
+ */
 export function groupEvents(events: KummelnasEvent[], now: number) {
   const byStart = (a: KummelnasEvent, b: KummelnasEvent) => Date.parse(a.startsAt) - Date.parse(b.startsAt)
+  const notEnded = events.filter((e) => !hasEnded(e, now)).sort(byStart)
   return {
-    current: events.filter((e) => !hasEnded(e, now)).sort(byStart),
+    ongoing: notEnded.filter((e) => isOngoingSeason(e, now)),
+    upcoming: notEnded.filter((e) => !isOngoingSeason(e, now)),
     past: events.filter((e) => hasEnded(e, now)).sort((a, b) => byStart(b, a)),
   }
 }

@@ -202,7 +202,7 @@ function MyEntrySummary({
         <EntryDetails entry={entry} />
       </p>
       <p className="muted small">
-        {entry.status === 'open' && 'Slut på godis eller inte hemma? Släck huset så syns det grått på kartan.'}
+        {entry.status === 'open' && 'Inte hemma eller passar det inte just nu? Släck huset så syns det grått på kartan.'}
         {entry.status === 'paused' && 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'}
         {entry.status === 'closed' &&
           `Öppet ${formatHours({ openFrom: '', openUntil: entry.openUntil })} har passerat, så huset syns grått på kartan.${

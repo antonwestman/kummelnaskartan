@@ -16,7 +16,7 @@ export type PageSeo = {
 export const SITE_TITLE = 'Kummelnäskartan – grannarnas karta över Kummelnäs och Boo'
 
 export function siteSeo(): PageSeo {
-  const description = `Se var det händer något i Kummelnäs och Saltsjö-Boo i Nacka: Halloween, loppisar och annat. För grannar i ${areaList}.`
+  const description = `Se var det händer något i Kummelnäs och Saltsjö-Boo i Nacka: Halloween, loppisar, pulkabackar och annat. För grannar i ${areaList}.`
   return {
     path: '/',
     title: SITE_TITLE,
@@ -35,7 +35,7 @@ export function siteSeo(): PageSeo {
 export function eventSeo(event: KummelnasEvent): PageSeo {
   const year = event.startsAt.slice(0, 4)
   const url = SITE_URL + eventPath(event.id)
-  const description = `${event.summary} ${event.dateLabel} i ${areaList}, Saltsjö-Boo.`
+  const description = `${event.summary} ${event.periodLabel} i ${areaList}, Saltsjö-Boo.`
   return {
     path: eventPath(event.id),
     title: `${event.title} i Kummelnäs ${year} – Kummelnäskartan`,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { SCRIPT_URL } from '../config'
-import { findEvent, type KummelnasEvent } from '../events'
+import { findEvent, type KummelnasEvent, type Place } from '../events'
 import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry } from '../lib/api'
@@ -15,8 +15,10 @@ import { withStatus } from '../lib/status'
 import { eventSeo } from '../seo'
 import { EntryList } from './EntryList'
 import { EventMap, type Selection } from './EventMap'
+import { entryMarkerId, placeMarkerId } from './markerIcon'
 import { MySignup } from './MySignup'
 import { NotFound } from './NotFound'
+import { PlaceList } from './PlaceList'
 
 export function EventPage() {
   const { eventId = '' } = useParams()
@@ -71,6 +73,15 @@ function EventView({ event }: { event: KummelnasEvent }) {
   // Släckta och stängda hus sist, men i samma ordning sinsemellan.
   const sortedEntries = [...ordered.filter((e) => e.status === 'open'), ...ordered.filter((e) => e.status !== 'open')]
 
+  // Fasta platser filtreras och sorteras på samma sätt som husen.
+  const allPlaces = event.places?.items ?? []
+  const searchedPlaces = allPlaces.filter((place) =>
+    matchesQuery({ address: '', name: place.name, note: place.note ?? '' }, query),
+  )
+  const nearbyPlaces =
+    userPosition && activeRadius ? withinRadius(searchedPlaces, userPosition, activeRadius) : searchedPlaces
+  const sortedPlaces = userPosition ? sortByDistance(nearbyPlaces, userPosition) : sortByName(nearbyPlaces)
+
   // Nekad eller misslyckad position: visa "Alla" och en släckt knapp i stället för ett filter som inte gäller.
   const shownRadius = geoFailed ? null : radius
   const locateActive = locating && !geoFailed
@@ -106,10 +117,12 @@ function EventView({ event }: { event: KummelnasEvent }) {
     setQuery(value)
   }
 
-  const showOnMap = (entry: Entry) => {
-    setSelection({ id: entry.id, position: entry })
+  const showOnMap = (selection: Selection) => {
+    setSelection(selection)
     mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+  const showEntry = (entry: Entry) => showOnMap({ markerId: entryMarkerId(entry.id), position: entry })
+  const showPlace = (place: Place) => showOnMap({ markerId: placeMarkerId(place.id), position: place })
 
   const signupSection = (
     <section ref={signupRef} className="signup" aria-labelledby="signup-heading">
@@ -121,7 +134,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
         onSaved={(entry, token) => {
           upsert(entry)
           setMyRef({ token, entryId: entry.id })
-          setSelection({ id: entry.id, position: entry })
+          setSelection({ markerId: entryMarkerId(entry.id), position: entry })
         }}
         onDeleted={(id) => {
           remove(id)
@@ -145,6 +158,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
       <section ref={mapRef} className="map-pane" aria-label="Karta">
         <EventMap
           entries={searchedEntries}
+          places={event.places && { ...event.places, items: searchedPlaces }}
+          loaded={!configured || state.status !== 'loading'}
           myEntryId={myEntry?.id ?? null}
           userPosition={userPosition}
           locating={locating}
@@ -180,13 +195,25 @@ function EventView({ event }: { event: KummelnasEvent }) {
       <div className="side-pane">
         <section className="intro">
           <h1>{event.title}</h1>
-          <p className="muted">{event.dateLabel}</p>
+          <p className="muted">{event.periodLabel}</p>
           <p>{event.summary}</p>
           {event.details.map((d) => (
             <p key={d} className="muted small">
               {d}
             </p>
           ))}
+          {event.places && allPlaces.length > 0 && (
+            <ul className="legend">
+              <li>
+                <span className="legend-pin pin-place" aria-hidden />
+                {event.places.label}
+              </li>
+              <li>
+                <span className="legend-pin" aria-hidden />
+                {event.places.entryLabel}
+              </li>
+            </ul>
+          )}
           {configured && state.status === 'ready' && state.signup.status === 'open' && !myEntry && (
             <button type="button" className="button primary" onClick={scrollToSignup}>
               Lägg till ditt hus
@@ -218,16 +245,28 @@ function EventView({ event }: { event: KummelnasEvent }) {
               query={query}
               onQueryChange={changeQuery}
               loading={state.status === 'loading'}
-              onShow={showOnMap}
+              onShow={showEntry}
             />
-
-            {!myEntry && signupSection}
           </>
         )}
+
+        {event.places && (
+          <PlaceList
+            heading={event.places.heading}
+            places={sortedPlaces}
+            total={allPlaces.length}
+            userPosition={userPosition}
+            onShow={showPlace}
+          />
+        )}
+
+        {configured && state.status !== 'error' && !myEntry && signupSection}
       </div>
     </div>
   )
 }
+
+const sortByName = (places: Place[]) => [...places].sort((a, b) => a.name.localeCompare(b.name, 'sv'))
 
 function LocateIcon() {
   return (

@@ -43,6 +43,26 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
    och publicera en ny version.
 3. Lägg till eventet i `src/events.ts` med samma `id`, `startsAt` och `endsAt`.
 
+### Endagsevent och säsonger
+
+`duration` i `src/events.ts` styr hur eventet visas på startsidan:
+
+- `'one-day'` (t.ex. Halloween): listas med datum under "På gång" tills det är slut.
+- `'season'` (t.ex. pulkabackar hela vintern): listas med datum under "På gång" innan det börjar och under
+  "Just nu i området" medan det pågår. Grannar kan lägga in sitt hus hela perioden och släcka det de dagar
+  det inte passar. Öppettiderna gäller varje dag.
+
+### Fasta platser (t.ex. allmänna pulkabackar)
+
+Platser som ingen äger läggs in direkt i `places.items` i `src/events.ts`, inte via formuläret:
+
+```ts
+{ id: 'kummelbacken', name: 'Kummelbacken', lat: 59.33, lng: 18.27, note: 'Flack, bra för små barn' },
+```
+
+De syns som fyrkantiga markörer bredvid grannarnas hus, i en egen lista och i en förklaring under rubriken.
+Koordinater får du genom att högerklicka på platsen i Google Maps. Inga ändringar i Apps Script behövs.
+
 ### Tider
 
 | Var | Fält | Styr |

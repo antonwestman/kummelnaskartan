@@ -6,6 +6,7 @@
   --muted: #8f877a;
   --accent: #ff8a2a;
   --accent-dim: #c4651c;
+  --place: #d8ecff;
   --danger: #f0675c;
   --topbar-h: 52px;
   color-scheme: dark;
@@ -122,6 +123,12 @@ code {
 
 .event-month {
   font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.event-now {
+  font-size: 0.85rem;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -540,6 +547,53 @@ details > p {
   background: #fff3e6;
   border-color: var(--accent);
   border-width: 4px;
+}
+
+/* Fast plats som ingen äger (t.ex. allmän pulkabacke): snövit och utan sken, så att den skiljs från tända hus. */
+.pin-place,
+.entry.place::before {
+  background: var(--place);
+  border-color: #1a1815;
+  box-shadow: none;
+}
+
+.entry.place::before {
+  border-radius: 2px;
+}
+
+.pin-place {
+  border-radius: 4px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-pin {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.legend-pin.pin-place {
+  border-radius: 2px;
+  background: var(--place);
+  box-shadow: none;
 }
 
 .leaflet-container {

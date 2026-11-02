@@ -11,7 +11,8 @@
 // Tider anges med tidszon: +01:00 vintertid, +02:00 sommartid. null = ingen gräns åt det hållet.
 // Att ta bort sitt hus går alltid.
 var EVENTS = {
-  'halloween-2026': { signupOpensAt: null, signupClosesAt: '2026-11-01T00:00:00+01:00' }
+  'halloween-2026': { signupOpensAt: null, signupClosesAt: '2026-11-01T00:00:00+01:00' },
+  'pulkabackar-2026': { signupOpensAt: null, signupClosesAt: '2027-04-01T00:00:00+02:00' }
 };
 
 // Skydd mot skräpposter. Gäller totalt för alla besökare (Apps Script ser inte IP-adresser).
