@@ -1,12 +1,13 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import L from 'leaflet'
-import { Circle, CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
+import { Circle, CircleMarker, MapContainer, Marker, Popup, Rectangle, TileLayer, useMap } from 'react-leaflet'
 import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
-import type { Position } from '../lib/api'
+import type { Position, Summary } from '../lib/api'
 import { formatEntryDate } from '../lib/dates'
 import { formatHours } from '../lib/hours'
+import { cellBounds, cellOpacity } from '../lib/summary'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { walkingDirectionsUrl } from '../lib/geo'
 import { entryMarkerId, pinIcon, placeMarkerId } from './markerIcon'
@@ -18,6 +19,8 @@ type Props = {
   entries: ShownEntry[]
   /** Fasta platser, filtrerade på samma sätt som husen. */
   places: PlaceLayer | null
+  /** Sammanställning för ett event som passerat sin tid: rutor i stället för hus. */
+  summary: Summary | null
   /** Husen är hämtade (eller gick inte att hämta): dags att zooma in på det som finns. */
   loaded: boolean
   myEntryId: string | null
@@ -28,13 +31,25 @@ type Props = {
   selection: Selection | null
 }
 
-export function EventMap({ entries, places, loaded, myEntryId, userPosition, locating, radius, selection }: Props) {
+export function EventMap({
+  entries,
+  places,
+  summary,
+  loaded,
+  myEntryId,
+  userPosition,
+  locating,
+  radius,
+  selection,
+}: Props) {
   const markers = useRef(new Map<string, L.Marker>())
   const keepMarker = (markerId: string) => (marker: L.Marker | null) => {
     if (marker) markers.current.set(markerId, marker)
     else markers.current.delete(markerId)
   }
   const placeItems = places?.items ?? []
+  const cells = summary?.cells ?? []
+  const maxCount = Math.max(0, ...cells.map((cell) => cell.count))
 
   return (
     <MapContainer
@@ -69,6 +84,16 @@ export function EventMap({ entries, places, loaded, myEntryId, userPosition, loc
           </Marker>
         )
       })}
+      {summary &&
+        cells.map((cell) => (
+          <Rectangle
+            key={`${cell.lat}:${cell.lng}`}
+            bounds={cellBounds(cell, summary.cellSize)}
+            pathOptions={{ stroke: false, fillColor: '#ff8a2a', fillOpacity: cellOpacity(cell.count, maxCount) }}
+          >
+            <Popup>{cell.count} hus</Popup>
+          </Rectangle>
+        ))}
       {places &&
         placeItems.map((place) => (
           <Marker
@@ -103,7 +128,7 @@ export function EventMap({ entries, places, loaded, myEntryId, userPosition, loc
           pathOptions={{ color: '#fff', weight: 3, fillColor: '#2b6fd6', fillOpacity: 1 }}
         />
       )}
-      {loaded && <FitOnce points={[...entries, ...placeItems]} />}
+      {loaded && <FitOnce points={[...entries, ...placeItems, ...cells]} />}
       {locating && userPosition && !radius && <FlyToOnce position={userPosition} />}
       {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
       {selection && <FocusSelection selection={selection} markers={markers} />}

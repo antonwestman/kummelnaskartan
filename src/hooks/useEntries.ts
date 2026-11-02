@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ApiError, fetchEntries, type Entry, type Signup } from '../lib/api'
+import { ApiError, fetchEntries, type Entry, type Signup, type Summary } from '../lib/api'
 
 type EntriesState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; entries: Entry[]; signup: Signup }
+  | { status: 'ready'; entries: Entry[]; signup: Signup; summary: Summary | null }
 
 const REFRESH_MS = 60_000
 
@@ -17,7 +17,7 @@ export function useEntries(eventId: string, enabled: boolean) {
     let cancelled = false
     const load = () =>
       fetchEntries(eventId).then(
-        ({ entries, signup }) => !cancelled && setState({ status: 'ready', entries, signup }),
+        ({ entries, signup, summary }) => !cancelled && setState({ status: 'ready', entries, signup, summary }),
         (err: unknown) => {
           if (cancelled) return
           const message = err instanceof ApiError ? err.message : 'Kunde inte hämta kartan.'

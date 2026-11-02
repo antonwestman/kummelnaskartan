@@ -125,3 +125,8 @@ Husen visas bara `HIDE_AFTER_DAYS` (7) dagar efter att anmälan stängt (`signup
 husets eget datum. `cleanUp()` i `Code.gs` raderar sedan raderna. Kör **`installCleanUp`** en gång från
 Apps Script-editorn (och godkänn behörigheten) så körs `cleanUp` varje natt. Sidan beskriver detta under
 "Om kartan och dina uppgifter", med kontaktadressen `CONTACT_EMAIL` i `src/config.ts`.
+
+Innan husen i ett event raderas sparas en sammanställning i fliken `statistik` (skapas automatiskt): antal hus
+och antal per ruta på 250 meter, bara rutor med minst 3 hus. Inga adresser, namn eller exakta positioner.
+Sidan för ett avslutat event visar "71 hushåll var med" och rutorna på kartan. Fliken kan inte läsas som ett
+event via webbappen. Vill du räkna om ett event, radera dess rad i `statistik` innan husen har raderats.
