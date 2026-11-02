@@ -52,6 +52,13 @@ Tokens finns bara i Sheetet och skickas aldrig ut i den publika listan.
   "Just nu i området" medan det pågår. Grannar kan lägga in sitt hus hela perioden och släcka det de dagar
   det inte passar. Öppettiderna gäller varje dag.
 
+### Eget datum per hus (t.ex. loppisar)
+
+Med `entryDates: 'own'` i `src/events.ts` och `ownDates: true` i `apps-script/Code.gs` väljer varje hus sitt
+eget datum i formuläret. Huset lyser på kartan bara den dagen (öppettiderna gäller då), syns grått med datum
+innan och försvinner från kartan när dagen har varit. Den som lagt in huset kan ändra datum för nästa gång.
+Raden ligger kvar i Sheetet tills någon tar bort den.
+
 ### Fasta platser (t.ex. allmänna pulkabackar)
 
 Platser som ingen äger läggs in direkt i `places.items` i `src/events.ts`, inte via formuläret:
@@ -75,10 +82,10 @@ Tider skrivs med tidszon: `2026-11-01T00:00:00+01:00` (vintertid) eller `+02:00`
 
 ### Kolumner i Sheetet
 
-`id`, `token`, `createdAt`, `updatedAt`, `address`, `lat`, `lng`, `name`, `note`, `paused`, `openFrom`, `openUntil`.
+`id`, `token`, `createdAt`, `updatedAt`, `address`, `lat`, `lng`, `name`, `note`, `paused`, `openFrom`, `openUntil`, `date`.
 Nya kolumner läggs till automatiskt. `paused` = TRUE/FALSE (släckt hus). `openFrom`/`openUntil` = klockslag
 som `17:00` (kolumnerna sätts till ren text så att Sheets inte gör om dem). När `openUntil` har passerat visas
-huset som stängt.
+huset som stängt. `date` = husets eget datum som `2026-11-14` (bara event med eget datum per hus, annars tom).
 
 ## Sidor och sökmotorer
 

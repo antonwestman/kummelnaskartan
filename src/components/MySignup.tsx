@@ -4,6 +4,7 @@ import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry,
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { displayAddress } from '../lib/address'
+import { formatEntryDate } from '../lib/dates'
 import { EntryDetails } from './EntryList'
 import { formatHours } from '../lib/hours'
 import type { ShownEntry } from '../lib/status'
@@ -13,14 +14,17 @@ type Props = {
   event: KummelnasEvent
   myRef: MyEntryRef | null
   myEntry: ShownEntry | undefined
+  /** Dagens datum, "YYYY-MM-DD" – tidigaste datum man kan välja när varje hus har eget datum. */
+  today: string
   /** null = laddar fortfarande. */
   signup: Signup | null
   onSaved: (entry: Entry, token: string) => void
   onDeleted: (id: string) => void
 }
 
-export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: Props) {
+export function MySignup({ event, myRef, myEntry, today, signup, onSaved, onDeleted }: Props) {
   const [editing, setEditing] = useState(false)
+  const dateField = event.entryDates === 'own' ? { min: today } : null
 
   if (!signup) {
     return (
@@ -44,6 +48,7 @@ export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: 
         {myRef && <p className="muted">Ditt hus finns inte längre på kartan.</p>}
         <SignupForm
           notePlaceholder={event.notePlaceholder}
+          dateField={dateField}
           submitLabel="Lägg till på kartan"
           onSubmit={async (input) => {
             const { entry, token } = await createEntry(event.id, input)
@@ -61,12 +66,14 @@ export function MySignup({ event, myRef, myEntry, signup, onSaved, onDeleted }: 
         <h2 id="signup-heading">Ändra</h2>
         <SignupForm
           notePlaceholder={event.notePlaceholder}
+          dateField={dateField}
           initialValues={{
             address: myEntry.address,
             name: myEntry.name,
             note: myEntry.note,
             openFrom: myEntry.openFrom,
             openUntil: myEntry.openUntil,
+            date: myEntry.date,
           }}
           submitLabel="Spara ändringar"
           onSubmit={async (input) => {
@@ -97,6 +104,8 @@ const HEADINGS: Record<ShownEntry['status'], string> = {
   open: 'Du är med på kartan',
   paused: 'Ditt hus är släckt',
   closed: 'Ditt hus är stängt',
+  later: 'Du är med på kartan',
+  past: 'Dagen har varit',
 }
 
 const formatOpensAt = (iso: string) =>
@@ -204,14 +213,17 @@ function MyEntrySummary({
       <p className="muted small">
         {entry.status === 'open' && 'Inte hemma eller passar det inte just nu? Släck huset så syns det grått på kartan.'}
         {entry.status === 'paused' && 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'}
+        {entry.status === 'later' && `Huset lyser på kartan ${formatEntryDate(entry.date)}. Fram till dess syns det grått.`}
+        {entry.status === 'past' &&
+          `Huset syns inte längre på kartan.${onEdit ? ' Ändra datum så kommer det tillbaka.' : ''}`}
         {entry.status === 'closed' &&
           `Öppet ${formatHours({ openFrom: '', openUntil: entry.openUntil })} har passerat, så huset syns grått på kartan.${
             onEdit ? ' Har du öppet längre kan du ändra tiden.' : ''
           }`}
       </p>
       <div className="form-actions">
-        {/* Stängt av tiden: släckt redan – då är "Ändra" (tiden) det man vill göra. */}
-        {entry.status !== 'closed' && (
+        {/* Släcka gäller bara dagen huset lyser. Stängt av tiden eller fel dag: "Ändra" är det man vill göra. */}
+        {(entry.status === 'open' || entry.status === 'paused') && (
           <button
             type="button"
             className={`button${entry.status === 'paused' ? ' primary' : ''}`}
@@ -226,7 +238,11 @@ function MyEntrySummary({
           </button>
         )}
         {onEdit && (
-          <button type="button" className={`button${entry.status === 'closed' ? ' primary' : ''}`} onClick={onEdit}>
+          <button
+            type="button"
+            className={`button${entry.status === 'closed' || entry.status === 'past' ? ' primary' : ''}`}
+            onClick={onEdit}
+          >
             Ändra
           </button>
         )}

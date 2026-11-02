@@ -5,6 +5,7 @@ import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position } from '../lib/api'
+import { formatEntryDate } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { walkingDirectionsUrl } from '../lib/geo'
@@ -43,27 +44,31 @@ export function EventMap({ entries, places, loaded, myEntryId, userPosition, loc
       scrollWheelZoom
     >
       <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={19} />
-      {entries.map((entry) => (
-        <Marker
-          key={entry.id}
-          position={[entry.lat, entry.lng]}
-          icon={pinIcon(entry.status !== 'open' ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
-          zIndexOffset={entry.status !== 'open' ? -1000 : 0}
-          ref={keepMarker(entryMarkerId(entry.id))}
-        >
-          <Popup>
-            <strong>{displayAddress(entry.address)}</strong>
-            {places && <div className="muted">{places.entryLabel}</div>}
-            {entry.status !== 'open' && <div className="muted">{STATUS_LABEL[entry.status].replace(/^./, (c) => c.toUpperCase())}</div>}
-            {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
-            {entry.name && <div>{entry.name}</div>}
-            {entry.note && <div className="muted">{entry.note}</div>}
-            <a href={walkingDirectionsUrl(entry)} target="_blank" rel="noreferrer">
-              Vägbeskrivning
-            </a>
-          </Popup>
-        </Marker>
-      ))}
+      {entries.map((entry) => {
+        const statusLabel = STATUS_LABEL[entry.status]
+        return (
+          <Marker
+            key={entry.id}
+            position={[entry.lat, entry.lng]}
+            icon={pinIcon(entry.status !== 'open' ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
+            zIndexOffset={entry.status !== 'open' ? -1000 : 0}
+            ref={keepMarker(entryMarkerId(entry.id))}
+          >
+            <Popup>
+              <strong>{displayAddress(entry.address)}</strong>
+              {places && <div className="muted">{places.entryLabel}</div>}
+              {statusLabel && <div className="muted">{capitalize(statusLabel)}</div>}
+              {entry.date && <div>{capitalize(formatEntryDate(entry.date))}</div>}
+              {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
+              {entry.name && <div>{entry.name}</div>}
+              {entry.note && <div className="muted">{entry.note}</div>}
+              <a href={walkingDirectionsUrl(entry)} target="_blank" rel="noreferrer">
+                Vägbeskrivning
+              </a>
+            </Popup>
+          </Marker>
+        )
+      })}
       {places &&
         placeItems.map((place) => (
           <Marker
@@ -104,6 +109,8 @@ export function EventMap({ entries, places, loaded, myEntryId, userPosition, loc
     </MapContainer>
   )
 }
+
+const capitalize = (text: string) => text.replace(/^./, (c) => c.toUpperCase())
 
 /** Zooma så att alla hus och platser syns första gången husen laddats. */
 function FitOnce({ points }: { points: Position[] }) {

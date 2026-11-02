@@ -28,6 +28,12 @@ export type KummelnasEvent = {
    */
   duration: 'one-day' | 'season'
   /**
+   * 'event': alla hus gäller eventets dag eller hela perioden (Halloween, pulkabackar).
+   * 'own': varje hus väljer sitt eget datum inom perioden och lyser bara den dagen (loppisar).
+   * Måste stämma med ownDates i EVENTS i apps-script/Code.gs.
+   */
+  entryDates: 'event' | 'own'
+  /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
    * Efter endsAt listas eventet under "Tidigare event". När man kan lägga in hus styrs
    * separat av EVENTS i apps-script/Code.gs.
@@ -48,6 +54,7 @@ export const EVENTS: KummelnasEvent[] = [
     id: 'halloween-2026',
     title: 'Trick or treat',
     duration: 'one-day',
+    entryDates: 'event',
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
     periodLabel: 'Lördag 31 oktober',
@@ -57,9 +64,23 @@ export const EVENTS: KummelnasEvent[] = [
     places: null,
   },
   {
+    id: 'loppisar',
+    title: 'Loppisar',
+    duration: 'season',
+    entryDates: 'own',
+    startsAt: '2026-11-01T00:00:00+01:00',
+    endsAt: '2028-01-01T00:00:00+01:00',
+    periodLabel: 'Året runt',
+    summary: 'Har du loppis på uppfarten? Lägg in dagen, så lyser huset på kartan när det är dags.',
+    details: ['Huset lyser bara den dag loppisen är. Kommande loppisar syns gråa med datum.'],
+    notePlaceholder: 'Barnkläder, leksaker och böcker',
+    places: null,
+  },
+  {
     id: 'pulkabackar-2026',
     title: 'Pulkabackar',
     duration: 'season',
+    entryDates: 'event',
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
     periodLabel: 'Vintern 2026/27',
@@ -80,6 +101,7 @@ export const EVENTS: KummelnasEvent[] = [
     id: 'skridskor-2026',
     title: 'Skridskor',
     duration: 'season',
+    entryDates: 'event',
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
     periodLabel: 'Vintern 2026/27',

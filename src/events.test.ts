@@ -8,6 +8,7 @@ const event = (
 ): KummelnasEvent => ({
   id,
   duration,
+  entryDates: 'event',
   startsAt,
   endsAt,
   title: id,
