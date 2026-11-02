@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { SCRIPT_URL } from '../config'
-import { findEvent, hasEnded, type KummelnasEvent, type Place } from '../events'
+import { findEvent, hasEnded, PLACE_CATEGORIES, type KummelnasEvent, type Place, type PlaceCategory } from '../events'
 import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
 import type { Entry, Summary } from '../lib/api'
@@ -12,6 +12,7 @@ import { useMyEntryRef } from '../lib/myEntry'
 import { useNow } from '../hooks/useNow'
 import { stockholmDate } from '../lib/dates'
 import { stockholmMinutes } from '../lib/hours'
+import { isInSeason, stockholmMonth } from '../lib/season'
 import { sortForDisplay, withStatus } from '../lib/status'
 import { eventSeo } from '../seo'
 import { AboutData } from './AboutData'
@@ -39,6 +40,9 @@ const RADIUS_EVENTS: Record<(typeof RADII)[number], AnalyticsEvent> = {
 
 function EventView({ event }: { event: KummelnasEvent }) {
   const configured = SCRIPT_URL !== ''
+  // Karta med bara fasta platser (signup null): inga hus att hämta, inget formulär.
+  const signupConfig = event.signup
+  const fetchesEntries = configured && signupConfig !== null
 
   useEffect(() => {
     const previous = document.title
@@ -47,7 +51,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
       document.title = previous
     }
   }, [event])
-  const { state, reload, upsert, remove } = useEntries(event.id, configured)
+  const { state, reload, upsert, remove } = useEntries(event.id, fetchesEntries)
   const [myRef, setMyRef] = useMyEntryRef(event.id)
   const [locating, setLocating] = useState(false)
   const [locateAttempt, setLocateAttempt] = useState(0)
@@ -56,6 +60,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const [radius, setRadius] = useState<number | null>(null)
   const [query, setQuery] = useState('')
   const [selection, setSelection] = useState<Selection | null>(null)
+  const [category, setCategory] = useState<PlaceCategory | null>(null)
   const mapRef = useRef<HTMLElement>(null)
   const signupRef = useRef<HTMLElement>(null)
 
@@ -78,10 +83,14 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const ordered = userPosition ? sortByDistance(nearbyEntries, userPosition) : sortByAddress(nearbyEntries)
   const sortedEntries = sortForDisplay(ordered)
 
-  // Fasta platser filtreras och sorteras på samma sätt som husen.
-  const allPlaces = event.places?.items ?? []
-  const searchedPlaces = allPlaces.filter((place) =>
-    matchesQuery({ address: '', name: place.name, note: place.note ?? '' }, query),
+  // Fasta platser: bara de som är i säsong, och sedan samma sökning och avstånd som husen, plus kategori.
+  const month = stockholmMonth(now)
+  const allPlaces = (event.places?.items ?? []).filter((place) => isInSeason(place.season, month))
+  const categories = [...new Set(allPlaces.map((place) => place.category))]
+  const searchedPlaces = allPlaces.filter(
+    (place) =>
+      (category === null || place.category === category) &&
+      matchesQuery({ address: '', name: place.name, note: place.note ?? '' }, query),
   )
   const nearbyPlaces =
     userPosition && activeRadius ? withinRadius(searchedPlaces, userPosition, activeRadius) : searchedPlaces
@@ -129,10 +138,11 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const showEntry = (entry: Entry) => showOnMap({ markerId: entryMarkerId(entry.id), position: entry })
   const showPlace = (place: Place) => showOnMap({ markerId: placeMarkerId(place.id), position: place })
 
-  const signupSection = (
+  const signupSection = signupConfig && (
     <section ref={signupRef} className="signup" aria-labelledby="signup-heading">
       <MySignup
         event={event}
+        config={signupConfig}
         myRef={myRef}
         myEntry={myEntry}
         today={today.date}
@@ -165,15 +175,16 @@ function EventView({ event }: { event: KummelnasEvent }) {
         <EventMap
           entries={searchedEntries}
           places={event.places && { ...event.places, items: searchedPlaces }}
+          houseLabel={signupConfig?.houseLabel ?? null}
           summary={summary}
-          loaded={!configured || state.status !== 'loading'}
+          loaded={!fetchesEntries || state.status !== 'loading'}
           myEntryId={myEntry?.id ?? null}
           userPosition={userPosition}
           locating={locating}
           radius={activeRadius}
           selection={selection}
         />
-        <div className="radius" role="group" aria-label="Visa hus inom">
+        <div className="radius" role="group" aria-label="Visa inom">
           {[null, ...RADII].map((value) => (
             <button
               key={value ?? 'all'}
@@ -210,26 +221,31 @@ function EventView({ event }: { event: KummelnasEvent }) {
               {d}
             </p>
           ))}
-          {event.places && allPlaces.length > 0 && (
+          {/* Förklaring när hus och platser blandas på samma karta. */}
+          {signupConfig?.houseLabel && allPlaces.length > 0 && (
             <ul className="legend">
-              <li>
-                <span className="legend-pin pin-place" aria-hidden />
-                {event.places.label}
-              </li>
+              {categories.map((c) => (
+                <li key={c}>
+                  <span className="legend-icon" aria-hidden>
+                    {PLACE_CATEGORIES[c].icon}
+                  </span>
+                  {PLACE_CATEGORIES[c].label}
+                </li>
+              ))}
               <li>
                 <span className="legend-pin" aria-hidden />
-                {event.places.entryLabel}
+                {signupConfig.houseLabel}
               </li>
             </ul>
           )}
-          {configured && state.status === 'ready' && state.signup.status === 'open' && !myEntry && (
+          {fetchesEntries && state.status === 'ready' && state.signup.status === 'open' && !myEntry && (
             <button type="button" className="button primary" onClick={scrollToSignup}>
               Lägg till ditt hus
             </button>
           )}
         </section>
 
-        {!configured ? (
+        {!signupConfig ? null : !configured ? (
           <p className="notice">
             Kartan är inte kopplad till något Google Sheet än. Sätt <code>SCRIPT_URL</code> i{' '}
             <code>src/config.ts</code> (se README).
@@ -265,14 +281,18 @@ function EventView({ event }: { event: KummelnasEvent }) {
         {event.places && (
           <PlaceList
             heading={event.places.heading}
+            eventTitle={event.title}
             places={sortedPlaces}
             total={allPlaces.length}
+            categories={categories}
+            category={category}
+            onCategoryChange={setCategory}
             userPosition={userPosition}
             onShow={showPlace}
           />
         )}
 
-        {configured && state.status !== 'error' && !myEntry && signupSection}
+        {fetchesEntries && state.status !== 'error' && !myEntry && signupSection}
 
         <AboutData />
       </div>

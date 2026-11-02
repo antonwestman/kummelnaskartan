@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import L from 'leaflet'
 import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileLayer, useMap } from 'react-leaflet'
 import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES, PAN_LIMIT_FACTOR } from '../config'
-import type { PlaceLayer } from '../events'
+import { PLACE_CATEGORIES, type PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position, Summary } from '../lib/api'
 import { formatEntryDates } from '../lib/dates'
@@ -10,7 +10,7 @@ import { formatHours } from '../lib/hours'
 import { heatColor, heatOpacity, metersPerPixel } from '../lib/summary'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { circlePolygon, walkingDirectionsUrl } from '../lib/geo'
-import { entryMarkerId, pinIcon, placeMarkerId } from './markerIcon'
+import { entryMarkerId, pinIcon, placeIcon, placeMarkerId } from './markerIcon'
 
 /** Ett nytt objekt per val, så att samma hus kan väljas igen och ändå flyga dit. */
 export type Selection = { markerId: string; position: Position }
@@ -19,6 +19,8 @@ type Props = {
   entries: ShownEntry[]
   /** Fasta platser, filtrerade på samma sätt som husen. */
   places: PlaceLayer | null
+  /** Vad husen kallas när det också finns fasta platser, t.ex. "Granne som bjuder in". */
+  houseLabel: string | null
   /** Sammanställning för ett event som passerat sin tid: rutor i stället för hus. */
   summary: Summary | null
   /** Husen är hämtade (eller gick inte att hämta): dags att zooma in på det som finns. */
@@ -34,6 +36,7 @@ type Props = {
 export function EventMap({
   entries,
   places,
+  houseLabel,
   summary,
   loaded,
   myEntryId,
@@ -75,7 +78,7 @@ export function EventMap({
           >
             <Popup>
               <strong>{displayAddress(entry.address)}</strong>
-              {places && <div className="muted">{places.entryLabel}</div>}
+              {houseLabel && placeItems.length > 0 && <div className="muted">{houseLabel}</div>}
               {statusLabel && <div className="muted">{capitalize(statusLabel)}</div>}
               {entry.date && <div>{capitalize(formatEntryDates(entry))}</div>}
               {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
@@ -113,12 +116,12 @@ export function EventMap({
           <Marker
             key={place.id}
             position={[place.lat, place.lng]}
-            icon={pinIcon('place')}
+            icon={placeIcon(PLACE_CATEGORIES[place.category].icon)}
             ref={keepMarker(placeMarkerId(place.id))}
           >
             <Popup>
               <strong>{place.name}</strong>
-              <div className="muted">{places.label}</div>
+              <div className="muted">{PLACE_CATEGORIES[place.category].label}</div>
               {place.note && <div>{place.note}</div>}
               {place.warning && <div className="place-warning">{place.warning}</div>}
               <a href={walkingDirectionsUrl(place)} target="_blank" rel="noreferrer">

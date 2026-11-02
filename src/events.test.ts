@@ -2,14 +2,13 @@ import { groupEvents, hasEnded, type KummelnasEvent } from './events'
 
 const event = (id: string, startsAt: string, endsAt: string): KummelnasEvent => ({
   id,
-  entryDates: { kind: 'event' },
   startsAt,
   endsAt,
   title: id,
   periodLabel: '',
   summary: '',
   details: [],
-  notePlaceholder: '',
+  signup: null,
   places: null,
 })
 
