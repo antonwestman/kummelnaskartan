@@ -25,7 +25,7 @@ export type KummelnasEvent = {
   id: string
   title: string
   /**
-   * 'one-day': en dag eller kväll, listas med datum under "På gång".
+   * 'one-day': en dag eller kväll, listas med datum under "Kommande".
    * 'season': pågår länge (t.ex. hela vintern), listas under "Just nu i området" medan det pågår.
    */
   duration: 'one-day' | 'season'
@@ -147,7 +147,7 @@ const isOngoingSeason = (event: KummelnasEvent, now: number) =>
   event.duration === 'season' && now >= Date.parse(event.startsAt) && !hasEnded(event, now)
 
 /**
- * Just nu: säsonger som pågår. På gång: allt annat som inte är slut, närmast först.
+ * Just nu: säsonger som pågår. Kommande: allt annat som inte är slut, närmast först.
  * Tidigare: slut, senaste först.
  */
 export function groupEvents(events: KummelnasEvent[], now: number) {

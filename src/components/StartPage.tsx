@@ -24,7 +24,7 @@ export function StartPage() {
       </p>
 
       {ongoing.length > 0 && <EventSection title="Just nu i området" events={ongoing} ongoing />}
-      {upcoming.length > 0 && <EventSection title="På gång" events={upcoming} />}
+      {upcoming.length > 0 && <EventSection title="Kommande" events={upcoming} />}
       {past.length > 0 && <EventSection title="Tidigare event" events={past} past />}
 
       <p className="muted small">
