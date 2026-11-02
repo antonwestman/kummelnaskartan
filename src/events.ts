@@ -123,8 +123,16 @@ export const EVENTS: KummelnasEvent[] = [
       entryLabel: 'Granne som bjuder in',
       // Lägg till isbanor här. Naturis får alltid en brasklapp, t.ex.:
       // { id: 'skolans-bana', name: 'Skolans isbana', lat: 59.33, lng: 18.27, note: 'Spolas när det är kallt' },
-      // { id: 'sjon', name: 'Sjön', lat: 59.33, lng: 18.27, note: 'Brukar plogas', warning: NATURAL_ICE_WARNING },
-      items: [],
+      items: [
+        {
+          id: 'karbosjon',
+          name: 'Karbosjön',
+          lat: 59.352057,
+          lng: 18.285473,
+          note: 'Brukar plogas när isen har lagt sig.',
+          warning: NATURAL_ICE_WARNING,
+        },
+      ],
     },
   },
 ]
