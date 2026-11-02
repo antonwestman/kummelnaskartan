@@ -6,7 +6,7 @@ export type Place = {
   lat: number
   lng: number
   note?: string
-  /** Brasklapp som syns tydligt i listan och på kartan, t.ex. för plogad naturis som ingen kontrollerar. */
+  /** Brasklapp som syns tydligt i listan och på kartan, t.ex. om något kräver extra försiktighet. */
   warning?: string
 }
 
@@ -51,9 +51,6 @@ export type KummelnasEvent = {
   places: PlaceLayer | null
 }
 
-/** Brasklapp för plogad naturis. */
-export const NATURAL_ICE_WARNING = 'Naturis som ingen kontrollerar. Kolla isen själv innan du går ut, och åk aldrig ensam.'
-
 export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
@@ -97,38 +94,6 @@ export const EVENTS: KummelnasEvent[] = [
       // Lägg till allmänna backar här, t.ex.:
       // { id: 'kummelbacken', name: 'Kummelbacken', lat: 59.33, lng: 18.27, note: 'Flack, bra för små barn' },
       items: [],
-    },
-  },
-  {
-    id: 'skridskor-2026-27',
-    title: 'Skridskor',
-    entryDates: 'event',
-    startsAt: '2026-12-01T00:00:00+01:00',
-    endsAt: '2027-04-01T00:00:00+02:00',
-    periodLabel: 'Vintern 2026/27',
-    summary:
-      'Isbanor i området och grannar som spolat en bana på tomten. Är en tomt släckt passar det inte just idag.',
-    details: [
-      'Ingen här kontrollerar isen. På sjöarna åker du på egen risk: kolla isläget själv, ha isdubbar och åk inte ensam.',
-      'Fråga gärna innan ni går in på någons tomt.',
-    ],
-    notePlaceholder: 'Ta med egna skridskor',
-    places: {
-      label: 'Isbana',
-      heading: 'Isbanor',
-      entryLabel: 'Granne som bjuder in',
-      // Lägg till isbanor här. Naturis får alltid en brasklapp, t.ex.:
-      // { id: 'skolans-bana', name: 'Skolans isbana', lat: 59.33, lng: 18.27, note: 'Spolas när det är kallt' },
-      items: [
-        {
-          id: 'karbosjon',
-          name: 'Karbosjön',
-          lat: 59.352057,
-          lng: 18.285473,
-          note: 'Brukar plogas när isen har lagt sig.',
-          warning: NATURAL_ICE_WARNING,
-        },
-      ],
     },
   },
 ]
