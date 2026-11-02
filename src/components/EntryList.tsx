@@ -1,5 +1,6 @@
 import { displayAddress } from '../lib/address'
 import type { Entry, Position } from '../lib/api'
+import { formatEntryDate } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { distanceInMeters, formatDistance } from '../lib/geo'
@@ -19,7 +20,7 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
   return (
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" className="section-label">
-        {loading ? 'Hus' : `${entries.filter((e) => e.status === 'open').length} hus`}
+        {loading ? 'Hus' : countLabel(entries)}
         {radius ? ` inom ${formatDistance(radius)}` : userPosition && ' · närmast först'}
       </h2>
       <input
@@ -49,7 +50,7 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
                 <span className="entry-address">
                   {displayAddress(entry.address)}
                   {entry.id === myEntryId && <span className="muted"> (du)</span>}
-                  {entry.status !== 'open' && <span className="muted"> · {STATUS_LABEL[entry.status]}</span>}
+                  {STATUS_LABEL[entry.status] && <span className="muted"> · {STATUS_LABEL[entry.status]}</span>}
                 </span>
                 <EntryDetails entry={entry} />
               </span>
@@ -64,8 +65,15 @@ export function EntryList({ entries, myEntryId, userPosition, radius, query, onQ
   )
 }
 
-/** Namn · öppettider · meddelande, det som finns. */
-export function EntryDetails({ entry }: { entry: Pick<Entry, 'name' | 'note' | 'openFrom' | 'openUntil'> }) {
-  const parts = [entry.name, formatHours(entry), entry.note].filter(Boolean)
+/** "3 hus", eller "1 hus idag, 4 senare" när det finns kommande hus (event där varje hus har eget datum). */
+function countLabel(entries: ShownEntry[]): string {
+  const open = entries.filter((e) => e.status === 'open').length
+  const later = entries.filter((e) => e.status === 'later').length
+  return later > 0 ? `${open} hus idag, ${later} senare` : `${open} hus`
+}
+
+/** Datum · namn · öppettider · meddelande, det som finns. */
+export function EntryDetails({ entry }: { entry: Pick<Entry, 'date' | 'name' | 'note' | 'openFrom' | 'openUntil'> }) {
+  const parts = [entry.date && formatEntryDate(entry.date), entry.name, formatHours(entry), entry.note].filter(Boolean)
   return parts.length > 0 ? <span className="muted">{parts.join(' · ')}</span> : null
 }

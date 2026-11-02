@@ -2,10 +2,20 @@ import { useId, useState, type FormEvent } from 'react'
 import { ApiError, type EntryInput, type Position } from '../lib/api'
 import { PositionPicker } from './PositionPicker'
 
-export type SignupValues = { address: string; name: string; note: string; openFrom: string; openUntil: string }
+export type SignupValues = {
+  address: string
+  name: string
+  note: string
+  openFrom: string
+  openUntil: string
+  /** "YYYY-MM-DD" eller '' */
+  date: string
+}
 
 type Props = {
   notePlaceholder: string
+  /** Visa ett obligatoriskt datumfält (event där varje hus väljer dag), med tidigaste tillåtna datum. null = inget datum. */
+  dateField: { min: string } | null
   initialValues?: SignupValues
   submitLabel: string
   /** Ska kasta ApiError vid fel; formuläret visar då felmeddelandet. */
@@ -15,9 +25,9 @@ type Props = {
 
 type Status = { kind: 'idle' } | { kind: 'submitting' } | { kind: 'error'; message: string }
 
-const EMPTY: SignupValues = { address: '', name: '', note: '', openFrom: '', openUntil: '' }
+const EMPTY: SignupValues = { address: '', name: '', note: '', openFrom: '', openUntil: '', date: '' }
 
-export function SignupForm({ notePlaceholder, initialValues = EMPTY, submitLabel, onSubmit, onCancel }: Props) {
+export function SignupForm({ notePlaceholder, dateField, initialValues = EMPTY, submitLabel, onSubmit, onCancel }: Props) {
   const id = useId()
   const [values, setValues] = useState(initialValues)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
@@ -73,6 +83,21 @@ export function SignupForm({ notePlaceholder, initialValues = EMPTY, submitLabel
         value={values.name}
         onChange={set('name')}
       />
+
+      {dateField && (
+        <>
+          <label htmlFor={`${id}-date`}>Datum</label>
+          <input
+            id={`${id}-date`}
+            name="date"
+            type="date"
+            required
+            min={dateField.min}
+            value={values.date}
+            onChange={set('date')}
+          />
+        </>
+      )}
 
       <div className="hours">
         <div>

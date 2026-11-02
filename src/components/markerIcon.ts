@@ -1,11 +1,13 @@
 import L from 'leaflet'
 
-export type PinVariant = 'default' | 'mine' | 'off'
+/** place = fast plats som ingen äger, t.ex. en allmän pulkabacke. */
+export type PinVariant = 'default' | 'mine' | 'off' | 'place'
 
 const icons: Record<PinVariant, L.DivIcon> = {
   default: makeIcon('default'),
   mine: makeIcon('mine'),
   off: makeIcon('off'),
+  place: makeIcon('place'),
 }
 
 function makeIcon(variant: PinVariant): L.DivIcon {
@@ -21,3 +23,7 @@ function makeIcon(variant: PinVariant): L.DivIcon {
 export function pinIcon(variant: PinVariant = 'default'): L.DivIcon {
   return icons[variant]
 }
+
+/** Markör-id:n för hus och platser får inte krocka. */
+export const entryMarkerId = (entryId: string) => `entry:${entryId}`
+export const placeMarkerId = (placeId: string) => `place:${placeId}`

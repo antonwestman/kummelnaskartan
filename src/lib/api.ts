@@ -13,6 +13,8 @@ const EntrySchema = z.object({
   /** "HH:MM" eller ''. Saknas i svar från äldre skript. */
   openFrom: z.string().optional().transform((time) => time ?? ''),
   openUntil: z.string().optional().transform((time) => time ?? ''),
+  /** "YYYY-MM-DD" när varje hus väljer eget datum (t.ex. loppisar), annars ''. Saknas i svar från äldre skript. */
+  date: z.string().optional().transform((date) => date ?? ''),
   updatedAt: z.string(),
 })
 
@@ -27,6 +29,8 @@ export type EntryInput = {
   /** "HH:MM" eller tom sträng. */
   openFrom: string
   openUntil: string
+  /** "YYYY-MM-DD" eller tom sträng när eventet har samma dag för alla. */
+  date: string
   /** Manuellt vald position. Utelämnas för att låta servern geokoda adressen. */
   position?: Position
 }

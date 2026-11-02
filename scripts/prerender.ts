@@ -57,15 +57,15 @@ function startBody(now: number): string {
     events.length === 0
       ? ''
       : `<h2 class="section-label">${title}</h2><ul>${events
-          .map((e) => `<li><a href="${eventPath(e.id)}">${escapeHtml(e.title)}</a> – ${escapeHtml(e.dateLabel)}</li>`)
+          .map((e) => `<li><a href="${eventPath(e.id)}">${escapeHtml(e.title)}</a> – ${escapeHtml(e.periodLabel)}</li>`)
           .join('')}</ul>`
-  const { current, past } = groupEvents(EVENTS, now)
-  return `<main class="start"><h1>Kummelnäskartan</h1><p class="lead">${escapeHtml(siteSeo().description)}</p>${list('På gång', current)}${list('Tidigare event', past)}</main>`
+  const { ongoing, upcoming, past } = groupEvents(EVENTS, now)
+  return `<main class="start"><h1>Kummelnäskartan</h1><p class="lead">${escapeHtml(siteSeo().description)}</p>${list('På gång', ongoing)}${list('Kommande', upcoming)}${list('Tidigare event', past)}</main>`
 }
 
 function eventBody(event: KummelnasEvent): string {
   const details = event.details.map((d) => `<p>${escapeHtml(d)}</p>`).join('')
-  return `<main class="start"><p><a href="/">Kummelnäskartan</a></p><h1>${escapeHtml(event.title)}</h1><p>${escapeHtml(event.dateLabel)}</p><p class="lead">${escapeHtml(event.summary)}</p>${details}</main>`
+  return `<main class="start"><p><a href="/">Kummelnäskartan</a></p><h1>${escapeHtml(event.title)}</h1><p>${escapeHtml(event.periodLabel)}</p><p class="lead">${escapeHtml(event.summary)}</p>${details}</main>`
 }
 
 function write(path: string, content: string) {

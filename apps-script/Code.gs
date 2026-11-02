@@ -10,8 +10,12 @@
 // när det går att lägga till eller ändra hus. Andra flikar i Sheetet kan aldrig nås.
 // Tider anges med tidszon: +01:00 vintertid, +02:00 sommartid. null = ingen gräns åt det hållet.
 // Att ta bort sitt hus går alltid.
+// ownDates: true = varje hus väljer eget datum (t.ex. loppisar). Samma som entryDates: 'own' i src/events.ts.
 var EVENTS = {
-  'halloween-2026': { signupOpensAt: null, signupClosesAt: '2026-11-01T00:00:00+01:00' }
+  'halloween-2026': { signupOpensAt: null, signupClosesAt: '2026-11-01T00:00:00+01:00' },
+  'loppisar': { signupOpensAt: null, signupClosesAt: null, ownDates: true },
+  'pulkabackar-2026': { signupOpensAt: null, signupClosesAt: '2027-04-01T00:00:00+02:00' },
+  'skridskor-2026': { signupOpensAt: null, signupClosesAt: '2027-04-01T00:00:00+02:00' }
 };
 
 // Skydd mot skräpposter. Gäller totalt för alla besökare (Apps Script ser inte IP-adresser).
@@ -20,9 +24,13 @@ var MAX_ENTRIES_PER_EVENT = 300;
 
 // 'paused' = huset är släckt (syns grått på kartan).
 // 'openFrom'/'openUntil' = valfria klockslag "HH:MM", lagras som text.
+// 'date' = husets eget datum "YYYY-MM-DD" (bara event med ownDates), lagras som text.
 // Nya kolumner läggs till automatiskt i befintliga flikar.
-var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused', 'openFrom', 'openUntil'];
-var TIME_COLUMNS = ['openFrom', 'openUntil'];
+var HEADERS = ['id', 'token', 'createdAt', 'updatedAt', 'address', 'lat', 'lng', 'name', 'note', 'paused', 'openFrom', 'openUntil', 'date'];
+var TEXT_COLUMNS = ['openFrom', 'openUntil', 'date'];
+
+// Hur långt fram man kan välja datum när varje hus har eget datum.
+var MAX_DAYS_AHEAD = 366;
 
 // Ungefärlig ruta runt Boo (Kummelnäs, Riset, Vikingshill, Eriksvik, Insjön, Kil m.fl.).
 // Adresser utanför avvisas så att felaktiga geokodningar inte hamnar på kartan.
@@ -82,6 +90,7 @@ function create_(sheet, body) {
   checkRateLimit_(body.event);
   var fields = cleanFields_(body);
   rejectDuplicate_(sheet, fields.address, null);
+  var date = entryDate_(body.event, body.date);
   var position = resolvePosition_(fields.address, body.position);
   var now = new Date().toISOString();
   var entry = {
@@ -96,7 +105,8 @@ function create_(sheet, body) {
     note: fields.note,
     paused: false,
     openFrom: fields.openFrom,
-    openUntil: fields.openUntil
+    openUntil: fields.openUntil,
+    date: date
   };
   sheet.appendRow(HEADERS.map(function (h) { return entry[h]; }));
   return { ok: true, entry: publicEntry_(entry), token: entry.token };
@@ -107,6 +117,7 @@ function update_(sheet, body) {
   var row = findByToken_(sheet, body.token);
   var fields = cleanFields_(body);
   rejectDuplicate_(sheet, fields.address, row.entry.id);
+  var date = entryDate_(body.event, body.date);
   var position = fields.address === row.entry.address && !body.position
     ? { lat: row.entry.lat, lng: row.entry.lng }
     : resolvePosition_(fields.address, body.position);
@@ -119,6 +130,7 @@ function update_(sheet, body) {
   entry.note = fields.note;
   entry.openFrom = fields.openFrom;
   entry.openUntil = fields.openUntil;
+  entry.date = date;
   writeRow_(sheet, row.rowNumber, entry);
   return { ok: true, entry: publicEntry_(entry) };
 }
@@ -176,18 +188,18 @@ function getEventSheet_(eventId) {
   if (!sheet) throw userError_('unknown_event', 'Eventet finns inte.');
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
-    formatTimeColumnsAsText_(sheet);
+    formatTextColumns_(sheet);
   } else if (sheet.getRange(1, HEADERS.length).getValue() !== HEADERS[HEADERS.length - 1]) {
     // Äldre flik utan de senaste kolumnerna: skriv om rubrikraden (datan påverkas inte).
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-    formatTimeColumnsAsText_(sheet);
+    formatTextColumns_(sheet);
   }
   return sheet;
 }
 
-/** Annars gör Sheets om "17:00" till ett klockslag med datum – även när man skriver in det för hand. */
-function formatTimeColumnsAsText_(sheet) {
-  TIME_COLUMNS.forEach(function (name) {
+/** Annars gör Sheets om "17:00" och "2026-11-14" till datum – även när man skriver in dem för hand. */
+function formatTextColumns_(sheet) {
+  TEXT_COLUMNS.forEach(function (name) {
     sheet.getRange(1, HEADERS.indexOf(name) + 1, sheet.getMaxRows(), 1).setNumberFormat('@');
   });
 }
@@ -225,6 +237,7 @@ function readRows_(sheet) {
       entry.paused = entry.paused === true || String(entry.paused).toUpperCase() === 'TRUE';
       entry.openFrom = timeValue_(entry.openFrom);
       entry.openUntil = timeValue_(entry.openUntil);
+      entry.date = dateValue_(entry.date);
       return entry;
     })
     .filter(function (entry) { return entry.id && isFinite(entry.lat) && isFinite(entry.lng); });
@@ -280,8 +293,35 @@ function publicEntry_(entry) {
     paused: entry.paused === true,
     openFrom: entry.openFrom || '',
     openUntil: entry.openUntil || '',
+    date: entry.date || '',
     updatedAt: String(entry.updatedAt)
   };
+}
+
+/** "YYYY-MM-DD" eller ''. Klarar också värden som Sheets redan gjort om till datum. */
+function dateValue_(value) {
+  if (value instanceof Date) {
+    var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
+  }
+  var text = String(value || '').trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '';
+}
+
+/** Dagens datum i Sverige, "YYYY-MM-DD", gärna med ett antal dagar framåt. */
+function stockholmDate_(daysAhead) {
+  return Utilities.formatDate(new Date(Date.now() + (daysAhead || 0) * 86400000), 'Europe/Stockholm', 'yyyy-MM-dd');
+}
+
+/** Husets datum: krävs för event med ownDates (från idag och ett år framåt), annars alltid ''. */
+function entryDate_(eventId, value) {
+  if (!EVENTS[eventId].ownDates) return '';
+  var date = String(value || '').trim();
+  var valid = /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date + 'T12:00:00Z'));
+  if (!valid) throw userError_('bad_request', 'Välj ett datum.');
+  if (date < stockholmDate_(0)) throw userError_('bad_request', 'Datumet har redan varit.');
+  if (date > stockholmDate_(MAX_DAYS_AHEAD)) throw userError_('bad_request', 'Datumet ligger för långt fram.');
+  return date;
 }
 
 /**
@@ -290,8 +330,11 @@ function publicEntry_(entry) {
  */
 function rejectDuplicate_(sheet, address, ownId) {
   var key = normalizeAddress_(address);
+  var today = stockholmDate_(0);
   var taken = readRows_(sheet).some(function (entry) {
-    return entry.id !== ownId && normalizeAddress_(entry.address) === key;
+    // Ett hus vars dag har varit räknas inte: då kan man lägga in en ny dag även från en annan telefon.
+    var over = entry.date && entry.date < today;
+    return entry.id !== ownId && !over && normalizeAddress_(entry.address) === key;
   });
   if (taken) {
     throw userError_(
