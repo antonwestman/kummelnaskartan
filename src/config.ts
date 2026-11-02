@@ -14,7 +14,13 @@ export const KUMMELNAS_CENTER = { lat: 59.3545, lng: 18.2685 } as const
  * Hus och platser utanför syns ändå (Code.gs tar emot adresser i hela Boo), bara bakgrunden mörknar.
  * En cirkel är en förenkling: justera mitt och radie tills den täcker det ni räknar som Kummelnäs.
  */
-export const FOCUS_AREA = { center: KUMMELNAS_CENTER, radiusMeters: 1500 } as const
+export const FOCUS_AREA = { center: KUMMELNAS_CENTER, radiusMeters: 2500 } as const
+
+/**
+ * Hur långt bort man kan panorera och zooma ut: en ruta med sidan 2 × diametern runt fokusområdet,
+ * alltså ungefär dubbla radien åt varje håll. Kartan går inte att dra eller zooma ut förbi den.
+ */
+export const PAN_LIMIT_FACTOR = 2
 
 /**
  * OpenStreetMaps vanliga kartbilder (kräver ingen API-nyckel).
