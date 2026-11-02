@@ -76,6 +76,29 @@ export const EVENTS: KummelnasEvent[] = [
       items: [],
     },
   },
+  {
+    id: 'skridskor-2026',
+    title: 'Skridskor',
+    duration: 'season',
+    startsAt: '2026-12-01T00:00:00+01:00',
+    endsAt: '2027-04-01T00:00:00+02:00',
+    periodLabel: 'Vintern 2026/27',
+    summary:
+      'Spolade isbanor i området och grannar som spolat en bana på tomten. Är en tomt släckt passar det inte just idag.',
+    details: [
+      'Här finns bara spolade banor. Gå inte ut på sjöisen utan att veta hur tjock den är.',
+      'Fråga gärna innan ni går in på någons tomt.',
+    ],
+    notePlaceholder: 'Ta med egna skridskor',
+    places: {
+      label: 'Spolad bana',
+      heading: 'Spolade banor',
+      entryLabel: 'Granne som bjuder in',
+      // Lägg till spolade banor här, t.ex.:
+      // { id: 'skolans-bana', name: 'Skolans isbana', lat: 59.33, lng: 18.27, note: 'Spolas när det är kallt' },
+      items: [],
+    },
+  },
 ]
 
 export function findEvent(id: string): KummelnasEvent | undefined {
