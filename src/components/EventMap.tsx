@@ -1,13 +1,13 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import L from 'leaflet'
-import { Circle, CircleMarker, MapContainer, Marker, Popup, Rectangle, TileLayer, useMap } from 'react-leaflet'
+import { Circle, CircleMarker, MapContainer, Marker, Pane, Popup, TileLayer, useMap } from 'react-leaflet'
 import { KUMMELNAS_CENTER, MAP_TILES } from '../config'
 import type { PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position, Summary } from '../lib/api'
 import { formatEntryDate } from '../lib/dates'
 import { formatHours } from '../lib/hours'
-import { cellBounds, cellOpacity } from '../lib/summary'
+import { heatColor, heatOpacity, metersPerPixel } from '../lib/summary'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { walkingDirectionsUrl } from '../lib/geo'
 import { entryMarkerId, pinIcon, placeMarkerId } from './markerIcon'
@@ -84,16 +84,26 @@ export function EventMap({
           </Marker>
         )
       })}
-      {summary &&
-        cells.map((cell) => (
-          <Rectangle
-            key={`${cell.lat}:${cell.lng}`}
-            bounds={cellBounds(cell, summary.cellSize)}
-            pathOptions={{ stroke: false, fillColor: '#ff8a2a', fillOpacity: cellOpacity(cell.count, maxCount) }}
-          >
-            <Popup>{cell.count} hus</Popup>
-          </Rectangle>
-        ))}
+      {summary && (
+        // Värmekarta: en mjuk glöd per ruta. Bygger bara på rutorna (minst några hus per ruta), aldrig på enskilda hus.
+        <Pane name={HEAT_PANE} style={{ zIndex: 350 }}>
+          <BlurWithZoom pane={HEAT_PANE} cellMeters={summary.cellMeters} />
+          {cells.map((cell) => (
+            <Circle
+              key={`${cell.lat}:${cell.lng}`}
+              center={[cell.lat, cell.lng]}
+              radius={summary.cellMeters * 0.6}
+              pathOptions={{
+                stroke: false,
+                fillColor: heatColor(cell.count, maxCount),
+                fillOpacity: heatOpacity(cell.count, maxCount),
+              }}
+            >
+              <Popup>{cell.count} hus</Popup>
+            </Circle>
+          ))}
+        </Pane>
+      )}
       {places &&
         placeItems.map((place) => (
           <Marker
@@ -128,7 +138,8 @@ export function EventMap({
           pathOptions={{ color: '#fff', weight: 3, fillColor: '#2b6fd6', fillOpacity: 1 }}
         />
       )}
-      {loaded && <FitOnce points={[...entries, ...placeItems, ...cells]} />}
+      {/* Värmekartan är grov: zooma inte närmare än att man ser området. */}
+      {loaded && <FitOnce points={[...entries, ...placeItems, ...cells]} maxZoom={summary ? 15 : 17} />}
       {locating && userPosition && !radius && <FlyToOnce position={userPosition} />}
       {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
       {selection && <FocusSelection selection={selection} markers={markers} />}
@@ -136,10 +147,31 @@ export function EventMap({
   )
 }
 
+const HEAT_PANE = 'heat'
+
+/** Suddar ut värmekartan lika mycket i meter oavsett zoom, så att glöden ser likadan ut när man zoomar. */
+function BlurWithZoom({ pane, cellMeters }: { pane: string; cellMeters: number }) {
+  const map = useMap()
+  useEffect(() => {
+    const apply = () => {
+      const element = map.getPane(pane)
+      if (!element) return
+      const pixels = cellMeters / metersPerPixel(map.getZoom(), map.getCenter().lat)
+      element.style.filter = `blur(${Math.round(pixels * 0.35)}px)`
+    }
+    apply()
+    map.on('zoomend', apply)
+    return () => {
+      map.off('zoomend', apply)
+    }
+  }, [map, pane, cellMeters])
+  return null
+}
+
 const capitalize = (text: string) => text.replace(/^./, (c) => c.toUpperCase())
 
 /** Zooma så att alla hus och platser syns första gången husen laddats. */
-function FitOnce({ points }: { points: Position[] }) {
+function FitOnce({ points, maxZoom }: { points: Position[]; maxZoom: number }) {
   const map = useMap()
   const done = useRef(false)
   useEffect(() => {
@@ -147,14 +179,14 @@ function FitOnce({ points }: { points: Position[] }) {
     done.current = true
     if (points.length === 1) {
       const [only] = points
-      if (only) map.setView([only.lat, only.lng], 16)
+      if (only) map.setView([only.lat, only.lng], Math.min(16, maxZoom))
       return
     }
     map.fitBounds(
       points.map((p): [number, number] => [p.lat, p.lng]),
-      { padding: [40, 40], maxZoom: 17 },
+      { padding: [40, 40], maxZoom },
     )
-  }, [points, map])
+  }, [points, map, maxZoom])
   return null
 }
 
