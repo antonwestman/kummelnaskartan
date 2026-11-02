@@ -12,7 +12,7 @@ export function AboutData() {
       </p>
       <p>
         Du kan ändra eller ta bort ditt hus när du vill, från samma telefon eller med din ändringslänk. {HIDE_AFTER_DAYS}{' '}
-        dagar efter att ett event har slutat (för loppisar: efter loppisdagen) visas husen inte längre och raderas.
+        dagar efter att ett event har slutat, eller efter husets sista dag, visas husen inte längre och raderas.
         Efteråt sparas bara hur många som var med och ungefär var, i rutor på 250 meter med minst tre hus. Inga
         adresser.
       </p>

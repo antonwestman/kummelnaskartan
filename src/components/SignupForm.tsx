@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
+import type { DateMode } from '../events'
 import { ApiError, type EntryInput, type Position } from '../lib/api'
 import { PositionPicker } from './PositionPicker'
 
@@ -8,14 +9,19 @@ export type SignupValues = {
   note: string
   openFrom: string
   openUntil: string
-  /** "YYYY-MM-DD" eller '' */
+  /** "YYYY-MM-DD" eller ''. Se Entry i lib/api.ts. */
   date: string
+  dateTo: string
 }
 
 type Props = {
   notePlaceholder: string
-  /** Visa ett obligatoriskt datumfält (event där varje hus väljer dag), med tidigaste tillåtna datum. null = inget datum. */
-  dateField: { min: string } | null
+  /**
+   * Låt huset välja när det är öppet (tills vidare, en dag eller en period). min = tidigaste tillåtna
+   * datum (idag), defaultMode = förval för ett nytt hus. null = inga datum (eventets egen tid gäller).
+   */
+  dateField: { min: string; defaultMode: DateMode } | null
+  /** Utelämnas för ett nytt hus. */
   initialValues?: SignupValues
   submitLabel: string
   /** Ska kasta ApiError vid fel; formuläret visar då felmeddelandet. */
@@ -25,11 +31,30 @@ type Props = {
 
 type Status = { kind: 'idle' } | { kind: 'submitting' } | { kind: 'error'; message: string }
 
-const EMPTY: SignupValues = { address: '', name: '', note: '', openFrom: '', openUntil: '', date: '' }
+const EMPTY: SignupValues = { address: '', name: '', note: '', openFrom: '', openUntil: '', date: '', dateTo: '' }
 
-export function SignupForm({ notePlaceholder, dateField, initialValues = EMPTY, submitLabel, onSubmit, onCancel }: Props) {
+const DATE_MODES: { mode: DateMode; label: string }[] = [
+  { mode: 'ongoing', label: 'Tills vidare' },
+  { mode: 'day', label: 'En dag' },
+  { mode: 'period', label: 'En period' },
+]
+
+/** Läget för ett hus som redan finns, utifrån dess datum. */
+const modeOf = ({ date, dateTo }: SignupValues): DateMode => (!date ? 'ongoing' : dateTo ? 'period' : 'day')
+
+/** Bara de datum som hör till läget skickas, så att ett byte av läge inte lämnar kvar gamla datum. */
+function datesFor(mode: DateMode, { date, dateTo }: SignupValues): Pick<SignupValues, 'date' | 'dateTo'> {
+  if (mode === 'ongoing') return { date: '', dateTo: '' }
+  if (mode === 'day') return { date, dateTo: '' }
+  return { date, dateTo }
+}
+
+export function SignupForm({ notePlaceholder, dateField, initialValues, submitLabel, onSubmit, onCancel }: Props) {
   const id = useId()
-  const [values, setValues] = useState(initialValues)
+  const [values, setValues] = useState(initialValues ?? EMPTY)
+  const [dateMode, setDateMode] = useState<DateMode>(() =>
+    initialValues ? modeOf(initialValues) : (dateField?.defaultMode ?? 'ongoing'),
+  )
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   // picking = användaren markerar huset själv i stället för att servern geokodar adressen.
   const [picking, setPicking] = useState(false)
@@ -46,7 +71,11 @@ export function SignupForm({ notePlaceholder, dateField, initialValues = EMPTY, 
     }
     setStatus({ kind: 'submitting' })
     try {
-      await onSubmit({ ...values, ...(picking && position ? { position } : {}) })
+      await onSubmit({
+        ...values,
+        ...(dateField ? datesFor(dateMode, values) : { date: '', dateTo: '' }),
+        ...(picking && position ? { position } : {}),
+      })
       setStatus({ kind: 'idle' })
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Något gick fel. Försök igen.'
@@ -85,18 +114,57 @@ export function SignupForm({ notePlaceholder, dateField, initialValues = EMPTY, 
       />
 
       {dateField && (
-        <>
-          <label htmlFor={`${id}-date`}>Datum</label>
-          <input
-            id={`${id}-date`}
-            name="date"
-            type="date"
-            required
-            min={dateField.min}
-            value={values.date}
-            onChange={set('date')}
-          />
-        </>
+        <fieldset className="date-mode">
+          <legend>När?</legend>
+          <div className="choices">
+            {DATE_MODES.map(({ mode, label }) => (
+              <label key={mode} className="choice">
+                <input
+                  type="radio"
+                  name={`${id}-date-mode`}
+                  checked={dateMode === mode}
+                  onChange={() => setDateMode(mode)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+
+          {dateMode === 'day' && (
+            <>
+              <label htmlFor={`${id}-date`}>Datum</label>
+              <input
+                id={`${id}-date`}
+                type="date"
+                required
+                min={dateField.min}
+                value={values.date}
+                onChange={set('date')}
+              />
+            </>
+          )}
+
+          {dateMode === 'period' && (
+            <div className="hours">
+              <div>
+                {/* Ingen min-gräns: en period som redan har börjat ska gå att ändra. */}
+                <label htmlFor={`${id}-date`}>Från</label>
+                <input id={`${id}-date`} type="date" required value={values.date} onChange={set('date')} />
+              </div>
+              <div>
+                <label htmlFor={`${id}-date-to`}>Till och med</label>
+                <input
+                  id={`${id}-date-to`}
+                  type="date"
+                  required
+                  min={values.date > dateField.min ? values.date : dateField.min}
+                  value={values.dateTo}
+                  onChange={set('dateTo')}
+                />
+              </div>
+            </div>
+          )}
+        </fieldset>
       )}
 
       <div className="hours">

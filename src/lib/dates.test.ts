@@ -1,4 +1,4 @@
-import { formatEntryDate, stockholmDate } from './dates'
+import { formatEntryDate, formatEntryDates, stockholmDate } from './dates'
 
 it('uses the Swedish date, also just after midnight', () => {
   expect(stockholmDate(Date.parse('2026-11-14T23:30:00Z'))).toBe('2026-11-15')
@@ -7,4 +7,10 @@ it('uses the Swedish date, also just after midnight', () => {
 
 it('formats a date short, with weekday', () => {
   expect(formatEntryDate('2026-11-14')).toBe('lör 14 nov')
+})
+
+it('formats a period, a single day, or nothing for "tills vidare"', () => {
+  expect(formatEntryDates({ date: '2026-11-14', dateTo: '2026-11-15' })).toBe('lör 14 nov – sön 15 nov')
+  expect(formatEntryDates({ date: '2026-11-14', dateTo: '' })).toBe('lör 14 nov')
+  expect(formatEntryDates({ date: '', dateTo: '' })).toBe('')
 })

@@ -1,6 +1,6 @@
 import { displayAddress } from '../lib/address'
 import type { Entry, Position } from '../lib/api'
-import { formatEntryDate } from '../lib/dates'
+import { formatEntryDates } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { distanceInMeters, formatDistance } from '../lib/geo'
@@ -87,7 +87,11 @@ function countLabel(entries: ShownEntry[]): string {
 }
 
 /** Datum · namn · öppettider · meddelande, det som finns. */
-export function EntryDetails({ entry }: { entry: Pick<Entry, 'date' | 'name' | 'note' | 'openFrom' | 'openUntil'> }) {
-  const parts = [entry.date && formatEntryDate(entry.date), entry.name, formatHours(entry), entry.note].filter(Boolean)
+export function EntryDetails({
+  entry,
+}: {
+  entry: Pick<Entry, 'date' | 'dateTo' | 'name' | 'note' | 'openFrom' | 'openUntil'>
+}) {
+  const parts = [formatEntryDates(entry), entry.name, formatHours(entry), entry.note].filter(Boolean)
   return parts.length > 0 ? <span className="muted">{parts.join(' · ')}</span> : null
 }

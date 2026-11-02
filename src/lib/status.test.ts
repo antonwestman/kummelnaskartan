@@ -12,6 +12,7 @@ const entry = (id: string, fields: Partial<Entry> = {}): Entry => ({
   openFrom: '',
   openUntil: '',
   date: '',
+  dateTo: '',
   updatedAt: '',
   ...fields,
 })
@@ -32,6 +33,17 @@ it('applies opening hours and pausing on the day itself', () => {
     saturdayNoon,
   )
   expect([closed?.status, paused?.status]).toEqual(['closed', 'paused'])
+})
+
+it('lights a house through its whole period, then turns it grey', () => {
+  const period = { date: '2026-11-10', dateTo: '2026-11-16' }
+  const statusOn = (date: string) => withStatus([entry('a', period)], { date, minutes: 12 * 60 })[0]?.status
+  expect([statusOn('2026-11-09'), statusOn('2026-11-10'), statusOn('2026-11-16'), statusOn('2026-11-17')]).toEqual([
+    'later',
+    'open',
+    'open',
+    'past',
+  ])
 })
 
 it('ignores dates for events where everyone shares the day', () => {

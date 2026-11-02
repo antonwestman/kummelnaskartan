@@ -3,7 +3,7 @@ import { isClosedForTheDay } from './hours'
 
 /**
  * open = lyser; paused = släckt av ägaren; closed = "Öppet till" har passerat idag.
- * later/past: bara för event där varje hus har eget datum (t.ex. loppisar) – dagen är inte idag än, eller har varit.
+ * later/past: bara för hus med datum – första dagen har inte kommit, eller sista dagen har varit.
  */
 export type EntryStatus = 'open' | 'paused' | 'closed' | 'later' | 'past'
 
@@ -13,8 +13,9 @@ export type ShownEntry = Entry & { status: EntryStatus }
 export type Today = { date: string; minutes: number }
 
 function statusOf(entry: Entry, today: Today): EntryStatus {
+  const lastDate = entry.dateTo || entry.date
   if (entry.date && entry.date > today.date) return 'later'
-  if (entry.date && entry.date < today.date) return 'past'
+  if (lastDate && lastDate < today.date) return 'past'
   if (entry.paused) return 'paused'
   return isClosedForTheDay(entry, today.minutes) ? 'closed' : 'open'
 }

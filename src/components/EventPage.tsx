@@ -65,9 +65,9 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const today = { date: stockholmDate(now), minutes: stockholmMinutes(now) }
   // Status (tänd/släckt/stängd/kommande/har varit) räknas fram vid varje render – inget sparas.
   const allEntries = withStatus(rawEntries, today)
-  // Ditt eget hus hittas även när dagen har varit, så att du kan ändra datum i stället för att lägga in det igen.
   const myEntry = myRef ? allEntries.find((e) => e.id === myRef.entryId) : undefined
-  const entries = allEntries.filter((e) => e.status !== 'past')
+  // Hus vars sista dag har varit syns gråa tills Code.gs slutar skicka dem (HIDE_AFTER_DAYS).
+  const entries = allEntries
   const userPosition = geo.status === 'on' ? geo.position : null
   // Radien gäller först när positionen är känd.
   const activeRadius = userPosition ? radius : null

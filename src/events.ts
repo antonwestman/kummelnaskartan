@@ -20,6 +20,9 @@ export type PlaceLayer = {
   items: Place[]
 }
 
+/** Hur ett hus anger när det är öppet: tills vidare, en dag eller en period. */
+export type DateMode = 'ongoing' | 'day' | 'period'
+
 export type KummelnasEvent = {
   /**
    * Måste vara exakt samma som fliknamnet i Google Sheet och nyckeln i EVENTS i apps-script/Code.gs.
@@ -29,11 +32,12 @@ export type KummelnasEvent = {
   id: string
   title: string
   /**
-   * 'event': alla hus gäller eventets dag eller hela perioden (Halloween, pulkabackar).
-   * 'own': varje hus väljer sitt eget datum inom perioden och lyser bara den dagen (loppisar).
+   * 'event': alla hus gäller eventets kväll (Halloween).
+   * 'own': varje hus väljer själv när det är öppet – tills vidare, en dag eller en period (loppisar,
+   * pulkabackar). defaultMode är det som är förvalt i formuläret.
    * Måste stämma med ownDates i EVENTS i apps-script/Code.gs.
    */
-  entryDates: 'event' | 'own'
+  entryDates: { kind: 'event' } | { kind: 'own'; defaultMode: DateMode }
   /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
    * Styr var eventet listas på startsidan: "Kommande" före startsAt, "På gång" fram till endsAt,
@@ -55,7 +59,7 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
     title: 'Trick or treat',
-    entryDates: 'event',
+    entryDates: { kind: 'event' },
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
     periodLabel: 'Lördag 31 oktober 2026',
@@ -67,25 +71,30 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'loppisar',
     title: 'Loppisar',
-    entryDates: 'own',
+    entryDates: { kind: 'own', defaultMode: 'day' },
     startsAt: '2026-11-01T00:00:00+01:00',
     endsAt: '2028-01-01T00:00:00+01:00',
     periodLabel: 'Året runt',
-    summary: 'Har du loppis på uppfarten? Lägg in dagen, så lyser huset på kartan när det är dags.',
-    details: ['Huset lyser bara den dag loppisen är. Kommande loppisar syns gråa med datum.'],
+    summary: 'Har du loppis på uppfarten? Lägg in när, så lyser huset på kartan när det är dags.',
+    details: [
+      'Välj en dag, en period eller tills vidare. Huset lyser när loppisen är öppen. Före och efter syns det grått med datum.',
+    ],
     notePlaceholder: 'Barnkläder, leksaker och böcker',
     places: null,
   },
   {
     id: 'pulkabackar-2026-27',
     title: 'Pulkabackar',
-    entryDates: 'event',
+    entryDates: { kind: 'own', defaultMode: 'ongoing' },
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
     periodLabel: 'Vintern 2026/27',
     summary:
       'Allmänna backar och trädgårdar där grannar bjuder in till pulkaåkning. Är en trädgård släckt passar det inte just idag.',
-    details: ['Har du en backe på tomten som andra får åka i? Lägg till ditt hus.', 'Fråga gärna innan ni går in på någons tomt.'],
+    details: [
+      'Har du en backe på tomten som andra får åka i? Lägg till ditt hus, tills vidare eller för en period när det är bra snö.',
+      'Fråga gärna innan ni går in på någons tomt.',
+    ],
     notePlaceholder: 'Kom in via grinden, ring gärna på',
     places: {
       label: 'Allmän backe',
