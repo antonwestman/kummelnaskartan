@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import L from 'leaflet'
 import { Link } from 'react-router'
 import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileLayer, useMap } from 'react-leaflet'
@@ -62,13 +62,21 @@ export function EventMap({
     else markers.current.delete(markerId)
   }
   const placeItems = places?.items ?? []
+  // Vyn räknas ut en gång när kartan startar: hela Kummelnäs plus de fasta platserna, som är kända direkt.
+  // Kartan flyttar sig sedan inte av sig själv när husen kommer, så sidan hoppar inte.
+  const [initialBounds] = useState(() => {
+    const bounds = L.latLngBounds(FOCUS_BOUNDS.getSouthWest(), FOCUS_BOUNDS.getNorthEast())
+    for (const place of placeItems) bounds.extend([place.lat, place.lng])
+    return bounds
+  })
   const cells = summary?.cells ?? []
   const maxCount = Math.max(0, ...cells.map((cell) => cell.count))
 
   return (
     <>
       <MapContainer
-        bounds={FOCUS_BOUNDS}
+        bounds={initialBounds}
+        boundsOptions={{ padding: [16, 16] }}
         className="map"
         scrollWheelZoom
         maxBounds={PAN_LIMIT}
@@ -161,7 +169,6 @@ export function EventMap({
           />
         )}
         {/* Värmekartan är grov: zooma inte närmare än att man ser området. */}
-        {loaded && <FitOnce points={[...entries, ...placeItems, ...cells]} maxZoom={summary ? 15 : 17} />}
         {locating && userPosition && !radius && <FlyToOnce position={userPosition} />}
         {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
         {selection && <FocusSelection selection={selection} markers={markers} />}
@@ -256,23 +263,6 @@ function BlurWithZoom({ pane, blurMeters }: { pane: string; blurMeters: number }
 }
 
 
-/**
- * Kartan börjar med hela Kummelnäs i bild. När husen har hämtats flyttas vyn bara om något ligger utanför,
- * och då mjukt, så att sidan inte hoppar när den laddas.
- */
-function FitOnce({ points, maxZoom }: { points: Position[]; maxZoom: number }) {
-  const map = useMap()
-  const done = useRef(false)
-  useEffect(() => {
-    if (done.current || points.length === 0) return
-    done.current = true
-    const view = map.getBounds()
-    if (points.every((p) => view.contains([p.lat, p.lng]))) return
-    const bounds = L.latLngBounds(points.map((p): [number, number] => [p.lat, p.lng])).extend(view)
-    map.flyToBounds(bounds, { padding: [24, 24], maxZoom, duration: 0.8 })
-  }, [points, map, maxZoom])
-  return null
-}
 
 /** Flyg till användaren när positionen hittas (en gång per påslagning). */
 function FlyToOnce({ position }: { position: Position }) {
@@ -301,7 +291,8 @@ const PAN_LIMIT = L.latLng(FOCUS_AREA.center.lat, FOCUS_AREA.center.lng).toBound
 function LimitZoomOut() {
   const map = useMap()
   useEffect(() => {
-    const apply = () => map.setMinZoom(map.getBoundsZoom(PAN_LIMIT, true))
+    // Aldrig högre än nuvarande zoom: då skulle kartan själv zooma in när den startar.
+    const apply = () => map.setMinZoom(Math.min(map.getBoundsZoom(PAN_LIMIT, true), map.getZoom()))
     apply()
     map.on('resize', apply)
     return () => {
