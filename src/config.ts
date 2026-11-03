@@ -14,7 +14,8 @@ export const KUMMELNAS_CENTER = { lat: 59.3545, lng: 18.2685 } as const
  * Hus och platser utanför syns ändå (Code.gs tar emot adresser i hela Boo), bara bakgrunden mörknar.
  * En cirkel är en förenkling: justera mitt och radie tills den täcker det ni räknar som Kummelnäs.
  */
-export const FOCUS_AREA = { center: KUMMELNAS_CENTER, radiusMeters: 2500 } as const
+// Mitten ligger lite söder om KUMMELNAS_CENTER, så att cirkeln täcker land och inte så mycket vatten i norr.
+export const FOCUS_AREA = { center: { lat: 59.341875, lng: 18.285117 }, radiusMeters: 2500 } as const
 
 /**
  * Hur långt bort man kan panorera och zooma ut: en ruta med sidan 2 × diametern runt fokusområdet,
