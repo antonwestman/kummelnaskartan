@@ -12,6 +12,7 @@ import { countLabel } from '../lib/text'
 import { eventPath } from '../paths'
 import { AboutData } from './AboutData'
 import { EventMap, type PopupLink } from './EventMap'
+import { WeatherBadge } from './WeatherBadge'
 
 const dayAndMonth = (iso: string) => {
   const date = new Date(iso)
@@ -72,6 +73,7 @@ export function StartPage() {
           onReport={null}
           linkFor={linkFor}
         />
+        <WeatherBadge />
       </section>
 
       <div className="side-pane">

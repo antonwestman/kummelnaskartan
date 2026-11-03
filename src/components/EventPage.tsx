@@ -23,6 +23,7 @@ import { MySignup } from './MySignup'
 import { NotFound } from './NotFound'
 import { PlaceList } from './PlaceList'
 import { ReportForm } from './ReportForm'
+import { WeatherBadge } from './WeatherBadge'
 
 export function EventPage() {
   const { eventId = '' } = useParams()
@@ -218,6 +219,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
         >
           <LocateIcon />
         </button>
+        <WeatherBadge />
         {geo.status === 'error' && <p className="map-message">{geo.message}</p>}
         {radius && geo.status === 'pending' && <p className="map-message">Letar efter din position…</p>}
       </section>
