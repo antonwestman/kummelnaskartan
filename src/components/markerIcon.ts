@@ -20,16 +20,16 @@ function makeIcon(variant: PinVariant): L.DivIcon {
 
 const placeIcons = new Map<string, L.DivIcon>()
 
-/** Fast plats: ljus fyrkant med kategorins ikon (emoji), en per ikon. */
+/** Fast plats: liten mörk ruta med kategorins ikon i grått, så att den inte konkurrerar med det som lyser. */
 export function placeIcon(icon: string): L.DivIcon {
   const cached = placeIcons.get(icon)
   if (cached) return cached
   const created = L.divIcon({
     className: 'pin pin-place',
     html: `<span aria-hidden="true">${icon}</span>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -15],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -12],
   })
   placeIcons.set(icon, created)
   return created
