@@ -50,6 +50,14 @@ gamla hus ligger kvar. Tiden står i id:t: år för en dag (`halloween-2026`), v
 (`pulkabackar-2026-27`). Nästa vinter kopierar du eventet till `pulkabackar-2027-28` med nya datum (fasta
 platser som backar och isbanor följer med i koden). Loppisar pågår hela tiden och har ingen tid i id:t.
 
+### Startsidan
+
+Startsidan visar en karta med allt som händer idag: hus som lyser i pågående event och fasta platser i
+säsong, med filter per event. Den hämtar alla event i ett anrop (`?overview=1` i `Code.gs`). Popupen länkar
+till eventets sida, där man lägger in sitt hus och ser kommande och släckta. Listan visar pågående event med
+antal idag, kommande event och tidigare event med antal hushåll från sammanställningen. Varje event har en
+ikon (`icon` i `src/events.ts`).
+
 ### Kommande, På gång och Tidigare
 
 `startsAt` och `endsAt` i `src/events.ts` styr var eventet listas på startsidan: "Kommande" innan det börjar,

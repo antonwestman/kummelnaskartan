@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import L from 'leaflet'
+import { Link } from 'react-router'
 import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileLayer, useMap } from 'react-leaflet'
 import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES, PAN_LIMIT_FACTOR } from '../config'
 import { PLACE_CATEGORIES, type PlaceLayer } from '../events'
@@ -12,6 +13,9 @@ import { capitalize } from '../lib/text'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { circlePolygon, walkingDirectionsUrl } from '../lib/geo'
 import { entryMarkerId, pinIcon, placeIcon, placeMarkerId } from './markerIcon'
+
+/** Länk i popupen till eventet ett hus eller en plats hör till (startsidan). */
+export type PopupLink = { label: string; to: string }
 
 /** Ett nytt objekt per val, så att samma hus kan väljas igen och ändå flyga dit. */
 export type Selection = { markerId: string; position: Position }
@@ -34,6 +38,8 @@ type Props = {
   selection: Selection | null
   /** Öppna rapportformuläret för ett hus eller en plats. null = rapporter går inte att skicka. */
   onReport: ((target: ReportTarget) => void) | null
+  /** Startsidan: länk till eventet i popupen. null på eventsidorna. */
+  linkFor?: ((kind: 'entry' | 'place', id: string) => PopupLink | null) | null
 }
 
 export function EventMap({
@@ -48,6 +54,7 @@ export function EventMap({
   radius,
   selection,
   onReport,
+  linkFor = null,
 }: Props) {
   const markers = useRef(new Map<string, L.Marker>())
   const keepMarker = (markerId: string) => (marker: L.Marker | null) => {
@@ -89,6 +96,7 @@ export function EventMap({
               {entry.name && <div>{entry.name}</div>}
               {entry.note && <div className="muted">{entry.note}</div>}
               <PopupLinks
+                eventLink={linkFor?.('entry', entry.id) ?? null}
                 directionsTo={entry}
                 report={onReport && (() => onReport({ kind: 'entry', id: entry.id, label: displayAddress(entry.address) }))}
               />
@@ -130,6 +138,7 @@ export function EventMap({
               {place.note && <div>{place.note}</div>}
               {place.warning && <div className="place-warning">{place.warning}</div>}
               <PopupLinks
+                eventLink={linkFor?.('place', place.id) ?? null}
                 directionsTo={place}
                 report={onReport && (() => onReport({ kind: 'place', id: place.id, label: place.name }))}
               />
@@ -160,10 +169,19 @@ export function EventMap({
   )
 }
 
-/** Vägbeskrivning och, när det går, Rapportera. */
-function PopupLinks({ directionsTo, report }: { directionsTo: Position; report: (() => void) | null }) {
+/** Vägbeskrivning och, när det går, Rapportera och en länk till eventet. */
+function PopupLinks({
+  eventLink,
+  directionsTo,
+  report,
+}: {
+  eventLink: PopupLink | null
+  directionsTo: Position
+  report: (() => void) | null
+}) {
   return (
     <div className="popup-links">
+      {eventLink && <Link to={eventLink.to}>{eventLink.label}</Link>}
       <a href={walkingDirectionsUrl(directionsTo)} target="_blank" rel="noreferrer">
         Vägbeskrivning
       </a>
