@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import L from 'leaflet'
 import { Link } from 'react-router'
 import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileLayer, useMap } from 'react-leaflet'
-import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES, PAN_LIMIT_FACTOR } from '../config'
+import { FOCUS_AREA, MAP_TILES, PAN_LIMIT_FACTOR } from '../config'
 import { PLACE_CATEGORIES, type PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Position, ReportTarget, Summary } from '../lib/api'
@@ -66,106 +66,113 @@ export function EventMap({
   const maxCount = Math.max(0, ...cells.map((cell) => cell.count))
 
   return (
-    <MapContainer
-      center={[KUMMELNAS_CENTER.lat, KUMMELNAS_CENTER.lng]}
-      zoom={15}
-      className="map"
-      scrollWheelZoom
-      maxBounds={PAN_LIMIT}
-      maxBoundsViscosity={1}
-    >
-      <LimitZoomOut />
-      <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={19} />
-      <FocusFog />
-      {entries.map((entry) => {
-        const statusLabel = STATUS_LABEL[entry.status]
-        return (
-          <Marker
-            key={entry.id}
-            position={[entry.lat, entry.lng]}
-            icon={pinIcon(entry.status !== 'open' ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
-            zIndexOffset={entry.status !== 'open' ? -1000 : 0}
-            ref={keepMarker(entryMarkerId(entry.id))}
-          >
-            <Popup>
-              <strong>{displayAddress(entry.address)}</strong>
-              {houseLabel && placeItems.length > 0 && <div className="muted">{houseLabel}</div>}
-              {statusLabel && <div className="muted">{capitalize(statusLabel)}</div>}
-              {entry.date && <div>{capitalize(formatEntryDates(entry))}</div>}
-              {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
-              {entry.name && <div>{entry.name}</div>}
-              {entry.note && <div className="muted">{entry.note}</div>}
-              <PopupLinks
-                eventLink={linkFor?.('entry', entry.id) ?? null}
-                directionsTo={entry}
-                report={onReport && (() => onReport({ kind: 'entry', id: entry.id, label: displayAddress(entry.address) }))}
-              />
-            </Popup>
-          </Marker>
-        )
-      })}
-      {summary && (
-        // Värmekarta: en mjuk glöd per ruta. Bygger bara på rutorna (minst några hus per ruta), aldrig på enskilda hus.
-        <Pane name={HEAT_PANE} style={{ zIndex: 350 }}>
-          <BlurWithZoom pane={HEAT_PANE} blurMeters={summary.cellMeters * 0.35} />
-          {cells.map((cell) => (
-            <Circle
-              key={`${cell.lat}:${cell.lng}`}
-              center={[cell.lat, cell.lng]}
-              radius={summary.cellMeters * 0.6}
-              pathOptions={{
-                stroke: false,
-                fillColor: heatColor(cell.count, maxCount),
-                fillOpacity: heatOpacity(cell.count, maxCount),
-              }}
+    <>
+      <MapContainer
+        bounds={FOCUS_BOUNDS}
+        className="map"
+        scrollWheelZoom
+        maxBounds={PAN_LIMIT}
+        maxBoundsViscosity={1}
+      >
+        <LimitZoomOut />
+        <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={19} />
+        <FocusFog />
+        {entries.map((entry) => {
+          const statusLabel = STATUS_LABEL[entry.status]
+          return (
+            <Marker
+              key={entry.id}
+              position={[entry.lat, entry.lng]}
+              icon={pinIcon(entry.status !== 'open' ? 'off' : entry.id === myEntryId ? 'mine' : 'default')}
+              zIndexOffset={entry.status !== 'open' ? -1000 : 0}
+              ref={keepMarker(entryMarkerId(entry.id))}
             >
-              <Popup>{cell.count} hus</Popup>
-            </Circle>
+              <Popup>
+                <strong>{displayAddress(entry.address)}</strong>
+                {houseLabel && placeItems.length > 0 && <div className="muted">{houseLabel}</div>}
+                {statusLabel && <div className="muted">{capitalize(statusLabel)}</div>}
+                {entry.date && <div>{capitalize(formatEntryDates(entry))}</div>}
+                {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
+                {entry.name && <div>{entry.name}</div>}
+                {entry.note && <div className="muted">{entry.note}</div>}
+                <PopupLinks
+                  eventLink={linkFor?.('entry', entry.id) ?? null}
+                  directionsTo={entry}
+                  report={onReport && (() => onReport({ kind: 'entry', id: entry.id, label: displayAddress(entry.address) }))}
+                />
+              </Popup>
+            </Marker>
+          )
+        })}
+        {summary && (
+          // Värmekarta: en mjuk glöd per ruta. Bygger bara på rutorna (minst några hus per ruta), aldrig på enskilda hus.
+          <Pane name={HEAT_PANE} style={{ zIndex: 350 }}>
+            <BlurWithZoom pane={HEAT_PANE} blurMeters={summary.cellMeters * 0.35} />
+            {cells.map((cell) => (
+              <Circle
+                key={`${cell.lat}:${cell.lng}`}
+                center={[cell.lat, cell.lng]}
+                radius={summary.cellMeters * 0.6}
+                pathOptions={{
+                  stroke: false,
+                  fillColor: heatColor(cell.count, maxCount),
+                  fillOpacity: heatOpacity(cell.count, maxCount),
+                }}
+              >
+                <Popup>{cell.count} hus</Popup>
+              </Circle>
+            ))}
+          </Pane>
+        )}
+        {places &&
+          placeItems.map((place) => (
+            <Marker
+              key={place.id}
+              position={[place.lat, place.lng]}
+              icon={placeIcon(PLACE_CATEGORIES[place.category].icon)}
+              ref={keepMarker(placeMarkerId(place.id))}
+            >
+              <Popup>
+                <strong>{place.name}</strong>
+                <div className="muted">{PLACE_CATEGORIES[place.category].label}</div>
+                {place.note && <div>{place.note}</div>}
+                {place.warning && <div className="place-warning">{place.warning}</div>}
+                <PopupLinks
+                  eventLink={linkFor?.('place', place.id) ?? null}
+                  directionsTo={place}
+                  report={onReport && (() => onReport({ kind: 'place', id: place.id, label: place.name }))}
+                />
+              </Popup>
+            </Marker>
           ))}
-        </Pane>
+        {userPosition && radius && (
+          <Circle
+            center={[userPosition.lat, userPosition.lng]}
+            radius={radius}
+            pathOptions={{ color: '#ff8a2a', weight: 1.5, dashArray: '4 6', fillColor: '#ff8a2a', fillOpacity: 0.06 }}
+            interactive={false}
+          />
+        )}
+        {userPosition && (
+          <CircleMarker
+            center={[userPosition.lat, userPosition.lng]}
+            radius={8}
+            pathOptions={{ color: '#fff', weight: 3, fillColor: '#2b6fd6', fillOpacity: 1 }}
+          />
+        )}
+        {/* Värmekartan är grov: zooma inte närmare än att man ser området. */}
+        {loaded && <FitOnce points={[...entries, ...placeItems, ...cells]} maxZoom={summary ? 15 : 17} />}
+        {locating && userPosition && !radius && <FlyToOnce position={userPosition} />}
+        {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
+        {selection && <FocusSelection selection={selection} markers={markers} />}
+      </MapContainer>
+      {/* Medan husen hämtas: kartan visar redan Kummelnäs, och den här rutan säger att mer är på väg. */}
+      {!loaded && (
+        <p className="map-loading" role="status">
+          Hämtar…
+        </p>
       )}
-      {places &&
-        placeItems.map((place) => (
-          <Marker
-            key={place.id}
-            position={[place.lat, place.lng]}
-            icon={placeIcon(PLACE_CATEGORIES[place.category].icon)}
-            ref={keepMarker(placeMarkerId(place.id))}
-          >
-            <Popup>
-              <strong>{place.name}</strong>
-              <div className="muted">{PLACE_CATEGORIES[place.category].label}</div>
-              {place.note && <div>{place.note}</div>}
-              {place.warning && <div className="place-warning">{place.warning}</div>}
-              <PopupLinks
-                eventLink={linkFor?.('place', place.id) ?? null}
-                directionsTo={place}
-                report={onReport && (() => onReport({ kind: 'place', id: place.id, label: place.name }))}
-              />
-            </Popup>
-          </Marker>
-        ))}
-      {userPosition && radius && (
-        <Circle
-          center={[userPosition.lat, userPosition.lng]}
-          radius={radius}
-          pathOptions={{ color: '#ff8a2a', weight: 1.5, dashArray: '4 6', fillColor: '#ff8a2a', fillOpacity: 0.06 }}
-          interactive={false}
-        />
-      )}
-      {userPosition && (
-        <CircleMarker
-          center={[userPosition.lat, userPosition.lng]}
-          radius={8}
-          pathOptions={{ color: '#fff', weight: 3, fillColor: '#2b6fd6', fillOpacity: 1 }}
-        />
-      )}
-      {/* Värmekartan är grov: zooma inte närmare än att man ser området. */}
-      {loaded && <FitOnce points={[...entries, ...placeItems, ...cells]} maxZoom={summary ? 15 : 17} />}
-      {locating && userPosition && !radius && <FlyToOnce position={userPosition} />}
-      {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
-      {selection && <FocusSelection selection={selection} markers={markers} />}
-    </MapContainer>
+    </>
   )
 }
 
@@ -249,22 +256,20 @@ function BlurWithZoom({ pane, blurMeters }: { pane: string; blurMeters: number }
 }
 
 
-/** Zooma så att alla hus och platser syns första gången husen laddats. */
+/**
+ * Kartan börjar med hela Kummelnäs i bild. När husen har hämtats flyttas vyn bara om något ligger utanför,
+ * och då mjukt, så att sidan inte hoppar när den laddas.
+ */
 function FitOnce({ points, maxZoom }: { points: Position[]; maxZoom: number }) {
   const map = useMap()
   const done = useRef(false)
   useEffect(() => {
     if (done.current || points.length === 0) return
     done.current = true
-    if (points.length === 1) {
-      const [only] = points
-      if (only) map.setView([only.lat, only.lng], Math.min(16, maxZoom))
-      return
-    }
-    map.fitBounds(
-      points.map((p): [number, number] => [p.lat, p.lng]),
-      { padding: [40, 40], maxZoom },
-    )
+    const view = map.getBounds()
+    if (points.every((p) => view.contains([p.lat, p.lng]))) return
+    const bounds = L.latLngBounds(points.map((p): [number, number] => [p.lat, p.lng])).extend(view)
+    map.flyToBounds(bounds, { padding: [24, 24], maxZoom, duration: 0.8 })
   }, [points, map, maxZoom])
   return null
 }
@@ -280,6 +285,9 @@ function FlyToOnce({ position }: { position: Position }) {
   }, [position, map])
   return null
 }
+
+/** Vyn kartan börjar med: hela cirkeln runt Kummelnäs. */
+const FOCUS_BOUNDS = L.latLng(FOCUS_AREA.center.lat, FOCUS_AREA.center.lng).toBounds(FOCUS_AREA.radiusMeters * 2)
 
 /** Rutan man kan röra sig inom: PAN_LIMIT_FACTOR gånger fokusområdets diameter, runt dess mitt. */
 const PAN_LIMIT = L.latLng(FOCUS_AREA.center.lat, FOCUS_AREA.center.lng).toBounds(
