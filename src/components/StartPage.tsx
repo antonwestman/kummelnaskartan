@@ -47,7 +47,7 @@ export function StartPage() {
   // Vilket event ett hus eller en plats hör till, för länken i popupen. Första eventet vinner för delade platser.
   const linkFor = (kind: 'entry' | 'place', id: string): PopupLink | null => {
     const item = shown.find((i) => (kind === 'entry' ? i.lit : i.places).some((x) => x.id === id))
-    return item ? { label: `${item.event.icon} ${item.event.title} ›`, to: eventPath(item.event.id) } : null
+    return item ? { label: `${item.event.title} ›`, to: eventPath(item.event.id) } : null
   }
 
   return (
@@ -89,7 +89,10 @@ export function StartPage() {
                   aria-pressed={filter === item.event.id}
                   onClick={() => setFilter(item.event.id)}
                 >
-                  {item.event.icon} {item.event.title} ({item.lit.length + item.places.length})
+                  <span className="chip-icon" aria-hidden>
+                    {item.event.icon}
+                  </span>{' '}
+                  {item.event.title} ({item.lit.length + item.places.length})
                 </button>
               ))}
             </div>

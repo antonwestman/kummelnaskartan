@@ -53,7 +53,16 @@ export function PlaceList({
         <div className="filter" role="group" aria-label="Visa">
           {[null, ...categories].map((c) => (
             <button key={c ?? 'all'} type="button" aria-pressed={category === c} onClick={() => onCategoryChange(c)}>
-              {c ? `${PLACE_CATEGORIES[c].icon} ${PLACE_CATEGORIES[c].plural}` : 'Alla'}
+              {c ? (
+                <>
+                  <span className="chip-icon" aria-hidden>
+                    {PLACE_CATEGORIES[c].icon}
+                  </span>{' '}
+                  {PLACE_CATEGORIES[c].plural}
+                </>
+              ) : (
+                'Alla'
+              )}
             </button>
           ))}
         </div>

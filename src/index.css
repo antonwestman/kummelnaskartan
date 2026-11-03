@@ -121,7 +121,7 @@ code {
 }
 
 .event-icon {
-  font-size: 1.5rem;
+  font-size: 1.15rem;
 }
 
 .event-day {
@@ -684,12 +684,22 @@ details > p {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1.5px solid #9aa2a0;
   border-radius: 6px;
-  background: var(--place);
-  border-color: #1a1815;
+  background: #23282a;
   box-shadow: none;
-  font-size: 15px;
+  font-size: 11px;
   line-height: 1;
+}
+
+/* Ikoner (emoji) i grått överallt: på kartan, i listor, filter och förklaringar. Färgen sparas till det som lyser. */
+.pin-place span,
+.place-icon,
+.legend-icon,
+.event-icon,
+.chip-icon {
+  filter: grayscale(1) brightness(1.15);
+  opacity: 0.85;
 }
 
 /* Listan: ikonen ersätter den runda pricken. */
@@ -702,7 +712,7 @@ details > p {
   flex: none;
   width: 22px;
   text-align: center;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 
 .place-warning {
