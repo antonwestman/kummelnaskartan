@@ -240,7 +240,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
           )}
           {fetchesEntries && state.status === 'ready' && state.signup.status === 'open' && !myEntry && (
             <button type="button" className="button primary" onClick={scrollToSignup}>
-              Lägg till ditt hus
+              Lägg till {signupConfig?.noun.yours}
             </button>
           )}
         </section>
@@ -264,6 +264,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
             {/* När husen har raderats står sammanställningen överst i stället för en tom lista. */}
             {!(summary && entries.length === 0) && (
               <EntryList
+                noun={signupConfig.noun}
                 entries={sortedEntries}
                 myEntryId={myEntry?.id ?? null}
                 userPosition={userPosition}

@@ -1,11 +1,15 @@
+import type { Noun } from '../events'
 import { displayAddress } from '../lib/address'
 import type { Entry, Position } from '../lib/api'
 import { formatEntryDates } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { distanceInMeters, formatDistance } from '../lib/geo'
+import { capitalize, countLabel } from '../lib/text'
 
 type Props = {
+  /** Vad grannarna lägger in: hus, backe, loppis. */
+  noun: Noun
   entries: ShownEntry[]
   myEntryId: string | null
   userPosition: Position | null
@@ -19,6 +23,7 @@ type Props = {
 }
 
 export function EntryList({
+  noun,
   entries,
   myEntryId,
   userPosition,
@@ -32,7 +37,7 @@ export function EntryList({
   return (
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" className="section-label">
-        {loading ? 'Hus' : countLabel(entries)}
+        {loading ? capitalize(noun.many) : countLabel(entries, noun)}
         {radius ? ` inom ${formatDistance(radius)}` : userPosition && ' · närmast först'}
       </h2>
       <input
@@ -48,12 +53,12 @@ export function EntryList({
       {!loading && entries.length === 0 && (
         <p className="muted">
           {query.trim()
-            ? 'Inga hus matchar sökningen.'
+            ? `Inga ${noun.many} matchar sökningen.`
             : radius
-              ? 'Inga hus så nära. Prova ett större avstånd.'
+              ? `Inga ${noun.many} så nära. Prova ett större avstånd.`
               : ended
-                ? 'Eventet är slut och husen visas inte längre.'
-                : 'Inga hus än.'}
+                ? `Eventet är slut och ${noun.theMany} visas inte längre.`
+                : `Inga ${noun.many} än.`}
         </p>
       )}
       <ul className="entries">
@@ -77,13 +82,6 @@ export function EntryList({
       </ul>
     </section>
   )
-}
-
-/** "3 hus", eller "1 hus idag, 4 senare" när det finns kommande hus (event där varje hus har eget datum). */
-function countLabel(entries: ShownEntry[]): string {
-  const open = entries.filter((e) => e.status === 'open').length
-  const later = entries.filter((e) => e.status === 'later').length
-  return later > 0 ? `${open} hus idag, ${later} senare` : `${open} hus`
 }
 
 /** Datum · namn · öppettider · meddelande, det som finns. */

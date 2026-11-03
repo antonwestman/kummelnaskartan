@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
-import type { DateMode } from '../events'
+import type { DateMode, Noun } from '../events'
 import { ApiError, type EntryInput, type Position } from '../lib/api'
 import { PositionPicker } from './PositionPicker'
 
@@ -15,6 +15,8 @@ export type SignupValues = {
 }
 
 type Props = {
+  /** Vad grannarna lägger in: hus, backe, loppis. */
+  noun: Noun
   notePlaceholder: string
   /**
    * Låt huset välja när det är öppet (tills vidare, en dag eller en period). min = tidigaste tillåtna
@@ -49,7 +51,7 @@ function datesFor(mode: DateMode, { date, dateTo }: SignupValues): Pick<SignupVa
   return { date, dateTo }
 }
 
-export function SignupForm({ notePlaceholder, dateField, initialValues, submitLabel, onSubmit, onCancel }: Props) {
+export function SignupForm({ noun, notePlaceholder, dateField, initialValues, submitLabel, onSubmit, onCancel }: Props) {
   const id = useId()
   const [values, setValues] = useState(initialValues ?? EMPTY)
   const [dateMode, setDateMode] = useState<DateMode>(() =>
@@ -66,7 +68,7 @@ export function SignupForm({ notePlaceholder, dateField, initialValues, submitLa
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (picking && !position) {
-      setStatus({ kind: 'error', message: 'Tryck på kartan där ditt hus ligger.' })
+      setStatus({ kind: 'error', message: `Tryck på kartan där ${noun.yours} ligger.` })
       return
     }
     setStatus({ kind: 'submitting' })
@@ -196,7 +198,7 @@ export function SignupForm({ notePlaceholder, dateField, initialValues, submitLa
 
       {picking ? (
         <div className="picker">
-          <p>Tryck på kartan där ditt hus ligger.</p>
+          <p>Tryck på kartan där {noun.yours} ligger.</p>
           <PositionPicker value={position} onChange={setPosition} />
           <button
             type="button"
@@ -211,7 +213,7 @@ export function SignupForm({ notePlaceholder, dateField, initialValues, submitLa
         </div>
       ) : (
         <button type="button" className="link-button" onClick={() => setPicking(true)}>
-          Sätt ut huset på kartan i stället
+          Sätt ut {noun.the} på kartan i stället
         </button>
       )}
 
