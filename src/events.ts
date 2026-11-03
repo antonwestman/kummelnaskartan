@@ -1,15 +1,18 @@
 /** Vad för slags plats: styr ikon, namn i listan och filtret. */
-export type PlaceCategory =
-  | 'pulkabacke'
-  | 'lekplats'
-  | 'bad'
-  | 'isbana'
-  | 'grillplats'
-  | 'utsikt'
-  | 'vindskydd'
-  | 'fiske'
-  | 'aktivitet'
-  | 'batbrygga'
+export const PLACE_CATEGORY_IDS = [
+  'lekplats',
+  'bad',
+  'grillplats',
+  'utsikt',
+  'vindskydd',
+  'fiske',
+  'aktivitet',
+  'pulkabacke',
+  'isbana',
+  'batbrygga',
+] as const
+
+export type PlaceCategory = (typeof PLACE_CATEGORY_IDS)[number]
 
 export const PLACE_CATEGORIES: Record<PlaceCategory, { label: string; plural: string; icon: string }> = {
   pulkabacke: { label: 'Allmän backe', plural: 'Allmänna backar', icon: '🛷' },

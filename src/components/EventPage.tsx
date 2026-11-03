@@ -282,6 +282,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
         {event.places && (
           <PlaceList
             heading={event.places.heading}
+            eventId={event.id}
             eventTitle={event.title}
             places={sortedPlaces}
             total={allPlaces.length}

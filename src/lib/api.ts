@@ -150,6 +150,21 @@ export async function setPaused(eventId: string, token: string, paused: boolean)
   return data.entry
 }
 
+/** Tips om en allmän plats. Hamnar i fliken "tips" i Sheetet, syns inte på kartan. */
+export type TipInput = {
+  /** Kartan tipset kom från, t.ex. "ute". */
+  event: string
+  category: string
+  name: string
+  note: string
+  lat: number
+  lng: number
+}
+
+export async function sendTip(tip: TipInput): Promise<void> {
+  await post(OkSchema, { action: 'tip', ...tip })
+}
+
 export async function lookupEntry(eventId: string, token: string): Promise<Entry> {
   const data = await post(EntryResponseSchema, { action: 'lookup', event: eventId, token })
   return data.entry

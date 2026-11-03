@@ -50,6 +50,14 @@ var BOUNDS = { south: 59.29, west: 18.15, north: 59.39, east: 18.38 };
 
 var MAX_LENGTH = { address: 120, name: 60, note: 200 };
 
+// Tips om platser från besökare. Hamnar i en egen flik som inte syns på kartan; den som sköter kartan
+// lägger in de bra i src/events.ts. Ett mejl skickas till TIP_EMAIL för varje tips (kräver att man
+// godkänner behörigheten att skicka mejl, se authorize()).
+var TIPS_SHEET = 'tips';
+var TIPS_HEADERS = ['createdAt', 'event', 'category', 'name', 'note', 'lat', 'lng', 'karta'];
+var TIP_EMAIL = 'hej@kummelnaskartan.se';
+var TIP_MAX_LENGTH = { event: 40, category: 20, name: 80, note: 300 };
+
 function doGet(e) {
   return handle_(function () {
     var eventId = e.parameter.event;
@@ -83,6 +91,8 @@ function doGet(e) {
 function doPost(e) {
   return handle_(function () {
     var body = JSON.parse(e.postData.contents);
+    // Tips hör inte till något events flik, så de hanteras innan fliken slås upp.
+    if (body.action === 'tip') return tip_(body);
     var sheet = getEventSheet_(body.event);
 
     if (body.action === 'lookup') return lookup_(sheet, body);
@@ -104,6 +114,52 @@ function doPost(e) {
 }
 
 // --- Åtgärder ---------------------------------------------------------------
+
+/** Ett tips om en plats: sparas i fliken TIPS_SHEET och mejlas till TIP_EMAIL. Syns inte på kartan. */
+function tip_(body) {
+  var name = clean_(body.name, TIP_MAX_LENGTH.name);
+  if (!name) throw userError_('bad_request', 'Skriv vad platsen heter.');
+  var category = clean_(body.category, TIP_MAX_LENGTH.category);
+  if (!/^[a-z]+$/.test(category)) throw userError_('bad_request', 'Välj vad det är för plats.');
+  var lat = Number(body.lat), lng = Number(body.lng);
+  if (!isFinite(lat) || !isFinite(lng) || !insideBounds_(lat, lng)) {
+    throw userError_('out_of_bounds', 'Platsen ligger för långt från Kummelnäs.');
+  }
+  var tip = {
+    createdAt: new Date().toISOString(),
+    event: clean_(body.event, TIP_MAX_LENGTH.event),
+    category: category,
+    name: name,
+    note: clean_(body.note, TIP_MAX_LENGTH.note),
+    lat: lat,
+    lng: lng,
+    karta: 'https://www.google.com/maps?q=' + lat + ',' + lng
+  };
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    checkRateLimit_('tips');
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = spreadsheet.getSheetByName(TIPS_SHEET) || spreadsheet.insertSheet(TIPS_SHEET);
+    if (sheet.getLastRow() === 0) sheet.appendRow(TIPS_HEADERS);
+    sheet.appendRow(TIPS_HEADERS.map(function (h) { return tip[h]; }));
+  } finally {
+    lock.releaseLock();
+  }
+
+  // Ett mejl som inte går iväg ska inte göra att tipset försvinner: det ligger redan i fliken.
+  try {
+    var lines = ['Plats: ' + tip.name, 'Vad: ' + tip.category, 'Från kartan: ' + tip.event];
+    if (tip.note) lines.push('Kommentar: ' + tip.note);
+    lines.push('Position: ' + tip.lat + ', ' + tip.lng, tip.karta, '');
+    lines.push('Tipset ligger också i fliken "' + TIPS_SHEET + '". Lägg in det i src/events.ts om det ska med.');
+    MailApp.sendEmail(TIP_EMAIL, 'Nytt tips: ' + tip.name, lines.join('\n'));
+  } catch (err) {
+    console.error(err);
+  }
+  return { ok: true };
+}
 
 function lookup_(sheet, body) {
   var row = findByToken_(sheet, body.token);
@@ -554,8 +610,9 @@ function installCleanUp() {
   ScriptApp.newTrigger('cleanUp').timeBased().everyDays(1).atHour(3).create();
 }
 
-/** Kör en gång från editorn för att godkänna behörigheter (Sheets + Maps). */
+/** Kör en gång från editorn för att godkänna behörigheter (Sheets + Maps + mejl om nya tips). */
 function authorize() {
   Maps.newGeocoder().geocode('Kummelnäsvägen 1, Saltsjö-Boo');
   SpreadsheetApp.getActiveSpreadsheet().getName();
+  MailApp.getRemainingDailyQuota(); // Behörigheten att skicka mejl om nya tips.
 }

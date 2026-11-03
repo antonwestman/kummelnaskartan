@@ -1,11 +1,15 @@
-import { CONTACT_EMAIL } from '../config'
+import { useState } from 'react'
+import { CONTACT_EMAIL, SCRIPT_URL } from '../config'
 import { PLACE_CATEGORIES, type Place, type PlaceCategory } from '../events'
 import type { Position } from '../lib/api'
 import { distanceInMeters, formatDistance } from '../lib/geo'
+import { TipForm } from './TipForm'
 
 type Props = {
   heading: string
-  /** Används i ämnesraden när någon tipsar om en plats. */
+  /** Kartan tipsen kommer från. */
+  eventId: string
+  /** Används i ämnesraden när någon tipsar via mejl. */
   eventTitle: string
   /** Redan filtrerade och sorterade. */
   places: Place[]
@@ -23,6 +27,7 @@ type Props = {
 /** Fasta platser som ingen äger, t.ex. lekplatser och allmänna pulkabackar. */
 export function PlaceList({
   heading,
+  eventId,
   eventTitle,
   places,
   total,
@@ -32,6 +37,9 @@ export function PlaceList({
   userPosition,
   onShow,
 }: Props) {
+  const [tipping, setTipping] = useState(false)
+  // Utan webbapp kan tips bara skickas med mejl.
+  const canSendTips = SCRIPT_URL !== ''
   return (
     <section aria-labelledby="places-heading">
       <h2 id="places-heading" className="section-label">
@@ -71,10 +79,27 @@ export function PlaceList({
         ))}
       </ul>
 
-      <p className="muted small">
-        Vet du en plats som borde vara med?{' '}
-        <a href={tipLink(eventTitle)}>Tipsa på {CONTACT_EMAIL}</a>
-      </p>
+      {tipping ? (
+        <TipForm
+          eventId={eventId}
+          defaultCategory={categories.length === 1 ? (categories[0] ?? null) : null}
+          onClose={() => setTipping(false)}
+        />
+      ) : (
+        <p className="muted small">
+          Vet du en allmän plats som borde vara med?{' '}
+          {canSendTips ? (
+            <>
+              <button type="button" className="link-button" onClick={() => setTipping(true)}>
+                Tipsa om en plats
+              </button>{' '}
+              eller <a href={tipLink(eventTitle)}>mejla {CONTACT_EMAIL}</a>
+            </>
+          ) : (
+            <a href={tipLink(eventTitle)}>Tipsa på {CONTACT_EMAIL}</a>
+          )}
+        </p>
+      )}
     </section>
   )
 }
