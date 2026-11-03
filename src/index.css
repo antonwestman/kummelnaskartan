@@ -322,6 +322,35 @@ h1.topbar-home {
   opacity: 0.85;
 }
 
+/* Medan husen hämtas: en liten ruta mitt upptill som pulserar svagt. */
+.map-loading {
+  position: absolute;
+  z-index: 500;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgb(15 17 18 / 0.8);
+  color: var(--muted);
+  font-size: 0.8rem;
+  pointer-events: none;
+  animation: map-loading-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes map-loading-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-loading {
+    animation: none;
+  }
+}
+
 .locate.active {
   color: #5b9bff;
 }
