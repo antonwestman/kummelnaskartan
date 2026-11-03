@@ -80,7 +80,7 @@ Platser som ingen äger läggs in direkt i `places.items` i `src/events.ts`, int
 
 Koordinater får du genom att högerklicka på platsen i Google Maps.
 
-**Tips från besökare:** under listan finns "Tipsa om en plats". Besökaren väljer vad det är, skriver ett namn
+**Tips från besökare:** under listan står "Vet du en allmän plats som borde vara med? Tipsa om den" (med `tipName`, t.ex. "allmän backe" på pulkakartan). Besökaren väljer vad det är, skriver ett namn
 och sätter ut platsen på en karta som börjar på ens egen position. Tipset hamnar i fliken `tips` i Sheetet
 (skapas automatiskt, med en länk till Google Maps), och `Code.gs` mejlar det till `TIP_EMAIL`. Tipsen syns
 inte på kartan. Lägg in de bra här. Kör `authorize` en gång från Apps Script-editorn så att skriptet får

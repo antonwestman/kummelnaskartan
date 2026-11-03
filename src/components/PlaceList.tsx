@@ -7,6 +7,8 @@ import { TipForm } from './TipForm'
 
 type Props = {
   heading: string
+  /** "allmän plats", "allmän backe" */
+  tipName: string
   /** Kartan tipsen kommer från. */
   eventId: string
   /** Används i ämnesraden när någon tipsar via mejl. */
@@ -27,6 +29,7 @@ type Props = {
 /** Fasta platser som ingen äger, t.ex. lekplatser och allmänna pulkabackar. */
 export function PlaceList({
   heading,
+  tipName,
   eventId,
   eventTitle,
   places,
@@ -87,11 +90,11 @@ export function PlaceList({
         />
       ) : (
         <p className="muted small">
-          Vet du en allmän plats som borde vara med?{' '}
+          Vet du en {tipName} som borde vara med?{' '}
           {canSendTips ? (
             <>
               <button type="button" className="link-button" onClick={() => setTipping(true)}>
-                Tipsa om en plats
+                Tipsa om den
               </button>{' '}
               eller <a href={tipLink(eventTitle)}>mejla {CONTACT_EMAIL}</a>
             </>

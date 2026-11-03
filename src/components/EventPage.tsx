@@ -301,6 +301,7 @@ function EventView({ event }: { event: KummelnasEvent }) {
         {event.places && (
           <PlaceList
             heading={event.places.heading}
+            tipName={event.places.tipName}
             eventId={event.id}
             eventTitle={event.title}
             places={sortedPlaces}

@@ -48,6 +48,8 @@ export type Place = {
 export type PlaceLayer = {
   /** Rubrik för listan, t.ex. "Allmänna backar". */
   heading: string
+  /** Vad man tipsar om, i obestämd form: "allmän plats", "allmän backe". */
+  tipName: string
   items: Place[]
 }
 
@@ -206,6 +208,7 @@ export const EVENTS: KummelnasEvent[] = [
     },
     places: {
       heading: 'Allmänna backar',
+      tipName: 'allmän backe',
       // Lägg till fler backar i PULKABACKAR ovan.
       items: PULKABACKAR,
     },
@@ -221,6 +224,7 @@ export const EVENTS: KummelnasEvent[] = [
     signup: null,
     places: {
       heading: 'Platser',
+      tipName: 'allmän plats',
       items: [
         { id: 'midsommarangen', name: 'Midsommarängens lekplats', category: 'lekplats', lat: 59.357537, lng: 18.287556 },
         { id: 'rudsjokroken', name: 'Rudsjökrokens lekplats', category: 'lekplats', lat: 59.348247, lng: 18.293235 },
