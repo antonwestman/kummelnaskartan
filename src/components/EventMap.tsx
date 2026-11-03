@@ -4,7 +4,7 @@ import { Circle, CircleMarker, MapContainer, Marker, Pane, Polygon, Popup, TileL
 import { FOCUS_AREA, KUMMELNAS_CENTER, MAP_TILES, PAN_LIMIT_FACTOR } from '../config'
 import { PLACE_CATEGORIES, type PlaceLayer } from '../events'
 import { displayAddress } from '../lib/address'
-import type { Position, Summary } from '../lib/api'
+import type { Position, ReportTarget, Summary } from '../lib/api'
 import { formatEntryDates } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { heatColor, heatOpacity, metersPerPixel } from '../lib/summary'
@@ -32,6 +32,8 @@ type Props = {
   /** Visa bara närområdet: radie i meter runt användaren. */
   radius: number | null
   selection: Selection | null
+  /** Öppna rapportformuläret för ett hus eller en plats. null = rapporter går inte att skicka. */
+  onReport: ((target: ReportTarget) => void) | null
 }
 
 export function EventMap({
@@ -45,6 +47,7 @@ export function EventMap({
   locating,
   radius,
   selection,
+  onReport,
 }: Props) {
   const markers = useRef(new Map<string, L.Marker>())
   const keepMarker = (markerId: string) => (marker: L.Marker | null) => {
@@ -85,9 +88,10 @@ export function EventMap({
               {formatHours(entry) && <div>Öppet {formatHours(entry)}</div>}
               {entry.name && <div>{entry.name}</div>}
               {entry.note && <div className="muted">{entry.note}</div>}
-              <a href={walkingDirectionsUrl(entry)} target="_blank" rel="noreferrer">
-                Vägbeskrivning
-              </a>
+              <PopupLinks
+                directionsTo={entry}
+                report={onReport && (() => onReport({ kind: 'entry', id: entry.id, label: displayAddress(entry.address) }))}
+              />
             </Popup>
           </Marker>
         )
@@ -125,9 +129,10 @@ export function EventMap({
               <div className="muted">{PLACE_CATEGORIES[place.category].label}</div>
               {place.note && <div>{place.note}</div>}
               {place.warning && <div className="place-warning">{place.warning}</div>}
-              <a href={walkingDirectionsUrl(place)} target="_blank" rel="noreferrer">
-                Vägbeskrivning
-              </a>
+              <PopupLinks
+                directionsTo={place}
+                report={onReport && (() => onReport({ kind: 'place', id: place.id, label: place.name }))}
+              />
             </Popup>
           </Marker>
         ))}
@@ -152,6 +157,22 @@ export function EventMap({
       {userPosition && radius && <FitToRadiusOnce key={radius} center={userPosition} radius={radius} />}
       {selection && <FocusSelection selection={selection} markers={markers} />}
     </MapContainer>
+  )
+}
+
+/** Vägbeskrivning och, när det går, Rapportera. */
+function PopupLinks({ directionsTo, report }: { directionsTo: Position; report: (() => void) | null }) {
+  return (
+    <div className="popup-links">
+      <a href={walkingDirectionsUrl(directionsTo)} target="_blank" rel="noreferrer">
+        Vägbeskrivning
+      </a>
+      {report && (
+        <button type="button" className="link-button" onClick={report}>
+          Rapportera
+        </button>
+      )}
+    </div>
   )
 }
 

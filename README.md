@@ -113,6 +113,16 @@ Appen använder vanliga sökvägar (`/`, `/halloween-2026/`). Efter `vite build`
 strukturerad data (schema.org) och synligt innehåll, plus `404.html` som fångar övriga adresser
 (t.ex. ändringslänkar) och `sitemap.xml`. Gamla `#/`-länkar skickas vidare till de nya adresserna.
 
+## Rapporter
+
+I popupen för varje hus och plats finns **Rapportera**. Besökaren väljer vad som är fel (fel information,
+inte en allmän plats, sin egen adress utlagd utan lov, eller annat), kan skriva en kommentar och lämna
+kontaktuppgifter. Rapporten hamnar i fliken `rapporter` (skapas automatiskt) och mejlas till `TIP_EMAIL`.
+**Inget döljs automatiskt.** Ett hus tar du bort genom att radera dess rad i eventets flik. Det sparas
+ingenting om vem som lagt in något (inga konton, och Apps Script ser inga IP-adresser), så det går inte
+att blockera en person. Spärrarna är `MAX_CREATES_PER_MINUTE`, `MAX_ENTRIES_PER_EVENT` och att stänga
+anmälan med `signupClosesAt`.
+
 ## Säkerhet
 
 - Ändra/ta bort kräver anmälans hemliga token. Tokens visas aldrig publikt.

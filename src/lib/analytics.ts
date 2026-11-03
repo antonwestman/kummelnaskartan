@@ -51,6 +51,7 @@ export type AnalyticsEvent =
   | 'avstand-1km'
   | 'sok'
   | 'tips-skickat'
+  | 'rapport-skickad'
 
 export function trackEvent(event: AnalyticsEvent) {
   send({ path: event, event: true })

@@ -4,7 +4,7 @@ import { SCRIPT_URL } from '../config'
 import { findEvent, hasEnded, PLACE_CATEGORIES, type KummelnasEvent, type Place, type PlaceCategory } from '../events'
 import { useEntries } from '../hooks/useEntries'
 import { useGeolocation } from '../hooks/useGeolocation'
-import type { Entry, Summary } from '../lib/api'
+import type { Entry, ReportTarget, Summary } from '../lib/api'
 import { formatDistance, sortByDistance, withinRadius } from '../lib/geo'
 import { matchesQuery, sortByAddress } from '../lib/search'
 import { trackEvent, type AnalyticsEvent } from '../lib/analytics'
@@ -22,6 +22,7 @@ import { entryMarkerId, placeMarkerId } from './markerIcon'
 import { MySignup } from './MySignup'
 import { NotFound } from './NotFound'
 import { PlaceList } from './PlaceList'
+import { ReportForm } from './ReportForm'
 
 export function EventPage() {
   const { eventId = '' } = useParams()
@@ -61,6 +62,8 @@ function EventView({ event }: { event: KummelnasEvent }) {
   const [query, setQuery] = useState('')
   const [selection, setSelection] = useState<Selection | null>(null)
   const [category, setCategory] = useState<PlaceCategory | null>(null)
+  const [reporting, setReporting] = useState<ReportTarget | null>(null)
+  const reportRef = useRef<HTMLElement>(null)
   const mapRef = useRef<HTMLElement>(null)
   const signupRef = useRef<HTMLElement>(null)
 
@@ -183,6 +186,15 @@ function EventView({ event }: { event: KummelnasEvent }) {
           locating={locating}
           radius={activeRadius}
           selection={selection}
+          onReport={
+            configured
+              ? (target) => {
+                  setReporting(target)
+                  // Formuläret ligger i sidopanelen, under kartan på mobilen.
+                  requestAnimationFrame(() => reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+                }
+              : null
+          }
         />
         <div className="radius" role="group" aria-label="Visa inom">
           {[null, ...RADII].map((value) => (
@@ -244,6 +256,13 @@ function EventView({ event }: { event: KummelnasEvent }) {
             </button>
           )}
         </section>
+
+        {reporting && (
+          <section ref={reportRef} className="report" aria-label="Rapportera">
+            <h2 className="section-label">Rapportera</h2>
+            <ReportForm key={reporting.id} eventId={event.id} target={reporting} onClose={() => setReporting(null)} />
+          </section>
+        )}
 
         {!signupConfig ? null : !configured ? (
           <p className="notice">

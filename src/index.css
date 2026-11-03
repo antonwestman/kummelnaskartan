@@ -485,11 +485,28 @@ select:focus {
   border-color: var(--accent);
 }
 
-.tip-form {
+.tip-form,
+.report-form {
   margin-top: 12px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.report {
+  scroll-margin-top: var(--topbar-h);
+}
+
+.choices.stacked {
+  flex-direction: column;
+  gap: 0;
+}
+
+.popup-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
 }
 
 .form-actions {

@@ -165,6 +165,23 @@ export async function sendTip(tip: TipInput): Promise<void> {
   await post(OkSchema, { action: 'tip', ...tip })
 }
 
+/** Vad som rapporteras: ett hus som en granne lagt in, eller en fast plats. */
+export type ReportTarget = { kind: 'entry' | 'place'; id: string; label: string }
+
+export type ReportReason = 'wrong' | 'not-public' | 'not-mine' | 'other'
+
+/** En rapport om något som är fel. Hamnar i fliken "rapporter" i Sheetet och ändrar inget på kartan. */
+export type ReportInput = ReportTarget & {
+  event: string
+  reason: ReportReason
+  comment: string
+  contact: string
+}
+
+export async function sendReport(report: ReportInput): Promise<void> {
+  await post(OkSchema, { action: 'report', ...report })
+}
+
 export async function lookupEntry(eventId: string, token: string): Promise<Entry> {
   const data = await post(EntryResponseSchema, { action: 'lookup', event: eventId, token })
   return data.entry
