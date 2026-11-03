@@ -8,6 +8,7 @@ import type { Position, Summary } from '../lib/api'
 import { formatEntryDates } from '../lib/dates'
 import { formatHours } from '../lib/hours'
 import { heatColor, heatOpacity, metersPerPixel } from '../lib/summary'
+import { capitalize } from '../lib/text'
 import { STATUS_LABEL, type ShownEntry } from '../lib/status'
 import { circlePolygon, walkingDirectionsUrl } from '../lib/geo'
 import { entryMarkerId, pinIcon, placeIcon, placeMarkerId } from './markerIcon'
@@ -208,7 +209,6 @@ function BlurWithZoom({ pane, blurMeters }: { pane: string; blurMeters: number }
   return null
 }
 
-const capitalize = (text: string) => text.replace(/^./, (c) => c.toUpperCase())
 
 /** Zooma så att alla hus och platser syns första gången husen laddats. */
 function FitOnce({ points, maxZoom }: { points: Position[]; maxZoom: number }) {

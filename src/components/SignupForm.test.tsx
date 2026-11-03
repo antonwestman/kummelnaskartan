@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DateMode } from '../events'
+import { HUS, type DateMode } from '../events'
 import { ApiError, type EntryInput } from '../lib/api'
 import { SignupForm } from './SignupForm'
 
@@ -8,7 +8,7 @@ function renderForm(
   onSubmit: (input: EntryInput) => Promise<void>,
   dateField: { min: string; defaultMode: DateMode } | null = null,
 ) {
-  render(<SignupForm notePlaceholder="" dateField={dateField} submitLabel="Lägg till på kartan" onSubmit={onSubmit} />)
+  render(<SignupForm noun={HUS} notePlaceholder="" dateField={dateField} submitLabel="Lägg till på kartan" onSubmit={onSubmit} />)
 }
 
 it('submits address, name and note', async () => {

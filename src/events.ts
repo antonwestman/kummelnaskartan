@@ -51,6 +51,27 @@ export type PlaceLayer = {
 /** Hur ett hus anger när det är öppet: tills vidare, en dag eller en period. */
 export type DateMode = 'ongoing' | 'day' | 'period'
 
+/**
+ * Vad grannarna lägger in, i de former texterna behöver: "Lägg till din backe", "3 backar", "Släck backen".
+ * Texterna är skrivna så att adjektiv inte behöver böjas efter ordet (de säger "markören blir grå").
+ */
+export type Noun = {
+  /** "hus", "backe" */
+  one: string
+  /** "hus", "backar" */
+  many: string
+  /** "huset", "backen" */
+  the: string
+  /** "husen", "backarna" */
+  theMany: string
+  /** "ditt hus", "din backe" */
+  yours: string
+}
+
+export const HUS: Noun = { one: 'hus', many: 'hus', the: 'huset', theMany: 'husen', yours: 'ditt hus' }
+const BACKE: Noun = { one: 'backe', many: 'backar', the: 'backen', theMany: 'backarna', yours: 'din backe' }
+const LOPPIS: Noun = { one: 'loppis', many: 'loppisar', the: 'loppisen', theMany: 'loppisarna', yours: 'din loppis' }
+
 /** Att grannar lägger in sina hus via formuläret. Kräver en flik i Sheetet och en rad i EVENTS i Code.gs. */
 export type SignupConfig = {
   /**
@@ -61,6 +82,8 @@ export type SignupConfig = {
    */
   dates: { kind: 'event' } | { kind: 'own'; defaultMode: DateMode }
   notePlaceholder: string
+  /** Vad grannarna lägger in: hus, backe, loppis. */
+  noun: Noun
   /** Vad husen kallas på kartan när det också finns fasta platser, t.ex. "Granne som bjuder in". */
   houseLabel?: string
 }
@@ -140,7 +163,7 @@ export const EVENTS: KummelnasEvent[] = [
     periodLabel: 'Lördag 31 oktober 2026',
     summary: 'Lyser det en pumpa vid dörren går det bra att knacka på. På kartan ser du vilka som öppnat upp för bus eller godis.',
     details: ['Glöm inte reflexer.'],
-    signup: { dates: { kind: 'event' }, notePlaceholder: 'Har nötfritt godis' },
+    signup: { dates: { kind: 'event' }, notePlaceholder: 'Har nötfritt godis', noun: HUS },
     places: null,
   },
   {
@@ -149,11 +172,15 @@ export const EVENTS: KummelnasEvent[] = [
     startsAt: '2026-11-01T00:00:00+01:00',
     endsAt: '2028-01-01T00:00:00+01:00',
     periodLabel: 'Året runt',
-    summary: 'Har du loppis på uppfarten? Lägg in när, så lyser huset på kartan när det är dags.',
+    summary: 'Har du loppis på uppfarten? Lägg in den, så lyser den på kartan när det är dags.',
     details: [
-      'Välj en dag, en period eller tills vidare. Huset lyser när loppisen är öppen. Före och efter syns det grått med datum.',
+      'Välj en dag, en period eller tills vidare. Loppisen lyser när den är öppen. Före och efter är markören grå och visar datum.',
     ],
-    signup: { dates: { kind: 'own', defaultMode: 'day' }, notePlaceholder: 'Barnkläder, leksaker och böcker' },
+    signup: {
+      dates: { kind: 'own', defaultMode: 'day' },
+      notePlaceholder: 'Barnkläder, leksaker och böcker',
+      noun: LOPPIS,
+    },
     places: null,
   },
   {
@@ -165,12 +192,13 @@ export const EVENTS: KummelnasEvent[] = [
     summary:
       'Allmänna backar och trädgårdar där grannar bjuder in till pulkaåkning. Är en trädgård släckt passar det inte just idag.',
     details: [
-      'Har du en backe på tomten som andra får åka i? Lägg till ditt hus, tills vidare eller för en period när det är bra snö.',
+      'Har du en backe på tomten som andra får åka i? Lägg till din backe, tills vidare eller för en period när det är bra snö.',
       'Fråga gärna innan ni går in på någons tomt.',
     ],
     signup: {
       dates: { kind: 'own', defaultMode: 'ongoing' },
       notePlaceholder: 'Kom in via grinden, ring gärna på',
+      noun: BACKE,
       houseLabel: 'Granne som bjuder in',
     },
     places: {

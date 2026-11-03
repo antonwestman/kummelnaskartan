@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import type { KummelnasEvent, SignupConfig } from '../events'
+import type { KummelnasEvent, Noun, SignupConfig } from '../events'
 import { ApiError, createEntry, deleteEntry, setPaused, updateEntry, type Entry, type Signup } from '../lib/api'
 import { editLink, type MyEntryRef } from '../lib/myEntry'
 import { trackEvent } from '../lib/analytics'
 import { displayAddress } from '../lib/address'
 import { HIDE_AFTER_DAYS } from '../config'
 import { formatEntryDates } from '../lib/dates'
+import { capitalize } from '../lib/text'
 import { EntryDetails } from './EntryList'
 import { formatHours } from '../lib/hours'
 import type { ShownEntry } from '../lib/status'
@@ -32,7 +33,7 @@ export function MySignup({ event, config, myRef, myEntry, today, signup, onSaved
   if (!signup) {
     return (
       <>
-        <h2 id="signup-heading">Lägg till ditt hus</h2>
+        <h2 id="signup-heading">Lägg till {config.noun.yours}</h2>
         <p className="muted">Laddar…</p>
       </>
     )
@@ -41,15 +42,16 @@ export function MySignup({ event, config, myRef, myEntry, today, signup, onSaved
   const open = signup.status === 'open'
 
   if ((!myRef || !myEntry) && !open) {
-    return <SignupUnavailable signup={signup} />
+    return <SignupUnavailable signup={signup} noun={config.noun} />
   }
 
   if (!myRef || !myEntry) {
     return (
       <>
-        <h2 id="signup-heading">Lägg till ditt hus</h2>
-        {myRef && <p className="muted">Ditt hus finns inte längre på kartan.</p>}
+        <h2 id="signup-heading">Lägg till {config.noun.yours}</h2>
+        {myRef && <p className="muted">{capitalize(config.noun.yours)} finns inte längre på kartan.</p>}
         <SignupForm
+          noun={config.noun}
           notePlaceholder={config.notePlaceholder}
           dateField={dateField}
           submitLabel="Lägg till på kartan"
@@ -68,6 +70,7 @@ export function MySignup({ event, config, myRef, myEntry, today, signup, onSaved
       <>
         <h2 id="signup-heading">Ändra</h2>
         <SignupForm
+          noun={config.noun}
           notePlaceholder={config.notePlaceholder}
           dateField={dateField}
           initialValues={{
@@ -94,6 +97,7 @@ export function MySignup({ event, config, myRef, myEntry, today, signup, onSaved
 
   return (
     <MyEntrySummary
+      noun={config.noun}
       event={event}
       entry={myEntry}
       token={myRef.token}
@@ -104,13 +108,13 @@ export function MySignup({ event, config, myRef, myEntry, today, signup, onSaved
   )
 }
 
-const HEADINGS: Record<ShownEntry['status'], string> = {
+const headings = (noun: Noun): Record<ShownEntry['status'], string> => ({
   open: 'Du är med på kartan',
-  paused: 'Ditt hus är släckt',
-  closed: 'Ditt hus är stängt',
+  paused: `${capitalize(noun.yours)} är släckt`,
+  closed: 'Stängt för idag',
   later: 'Du är med på kartan',
   past: 'Sista dagen har varit',
-}
+})
 
 const formatOpensAt = (iso: string) =>
   new Date(iso).toLocaleString('sv-SE', {
@@ -122,26 +126,29 @@ const formatOpensAt = (iso: string) =>
     minute: '2-digit',
   })
 
-function SignupUnavailable({ signup }: { signup: Exclude<Signup, { status: 'open' }> }) {
+function SignupUnavailable({ signup, noun }: { signup: Exclude<Signup, { status: 'open' }>; noun: Noun }) {
   if (signup.status === 'closed') {
     return (
       <>
         <h2 id="signup-heading">Anmälan är stängd</h2>
-        <p className="muted">Det går inte längre att lägga till hus för det här eventet.</p>
+        <p className="muted">Det går inte längre att lägga till {noun.many} för det här eventet.</p>
       </>
     )
   }
   return (
     <>
-      <h2 id="signup-heading">Lägg till ditt hus</h2>
+      <h2 id="signup-heading">Lägg till {noun.yours}</h2>
       <p className="muted">
-        {signup.opensAt ? `Det går att lägga till hus från ${formatOpensAt(signup.opensAt)}.` : 'Det går att lägga till hus snart.'}
+        {signup.opensAt
+          ? `Det går att lägga till ${noun.many} från ${formatOpensAt(signup.opensAt)}.`
+          : `Det går att lägga till ${noun.many} snart.`}
       </p>
     </>
   )
 }
 
 function MyEntrySummary({
+  noun,
   event,
   entry,
   token,
@@ -149,6 +156,7 @@ function MyEntrySummary({
   onUpdated,
   onDeleted,
 }: {
+  noun: Noun
   event: KummelnasEvent
   entry: ShownEntry
   token: string
@@ -165,7 +173,7 @@ function MyEntrySummary({
   const link = editLink(event.id, token)
 
   const handleDelete = async () => {
-    if (!window.confirm('Ta bort ditt hus från kartan?')) return
+    if (!window.confirm(`Ta bort ${noun.yours} från kartan?`)) return
     setActionState({ kind: 'busy', action: 'delete' })
     try {
       await deleteEntry(event.id, token)
@@ -197,7 +205,7 @@ function MyEntrySummary({
   const handleShareLink = async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Ändra mitt hus på Kummelnäskartan', url: link })
+        await navigator.share({ title: 'Ändringslänk till Kummelnäskartan', url: link })
       } else {
         await navigator.clipboard.writeText(link)
         setCopied(true)
@@ -209,22 +217,23 @@ function MyEntrySummary({
 
   return (
     <>
-      <h2 id="signup-heading">{HEADINGS[entry.status]}</h2>
+      <h2 id="signup-heading">{headings(noun)[entry.status]}</h2>
       <p className="my-entry">
         <strong>{displayAddress(entry.address)}</strong>
         <EntryDetails entry={entry} />
       </p>
       <p className="muted small">
-        {entry.status === 'open' && 'Inte hemma eller passar det inte just nu? Släck huset så syns det grått på kartan.'}
-        {entry.status === 'paused' && 'Huset syns grått på kartan så att ingen knackar på. Tänd det igen när du vill.'}
+        {entry.status === 'open' &&
+          `Inte hemma eller passar det inte just nu? Släck ${noun.the} så blir markören grå på kartan.`}
+        {entry.status === 'paused' && 'Markören är grå på kartan så att ingen kommer förbi i onödan. Tänd igen när du vill.'}
         {entry.status === 'later' &&
-          `Huset lyser på kartan ${formatEntryDates(entry)}. Fram till dess syns det grått.`}
+          `${capitalize(noun.the)} lyser på kartan ${formatEntryDates(entry)}. Fram till dess är markören grå.`}
         {entry.status === 'past' &&
-          `Huset syns grått på kartan och tas bort efter ${HIDE_AFTER_DAYS} dagar.${
-            onEdit ? ' Ändra datum så lyser det igen.' : ''
+          `Markören är grå på kartan och tas bort efter ${HIDE_AFTER_DAYS} dagar.${
+            onEdit ? ' Ändra datum så lyser den igen.' : ''
           }`}
         {entry.status === 'closed' &&
-          `Öppet ${formatHours({ openFrom: '', openUntil: entry.openUntil })} har passerat, så huset syns grått på kartan.${
+          `Öppet ${formatHours({ openFrom: '', openUntil: entry.openUntil })} har passerat, så markören är grå på kartan.${
             onEdit ? ' Har du öppet längre kan du ändra tiden.' : ''
           }`}
       </p>
@@ -241,7 +250,7 @@ function MyEntrySummary({
               ? 'Sparar…'
               : entry.paused
                 ? 'Tänd igen'
-                : 'Släck huset'}
+                : `Släck ${noun.the}`}
           </button>
         )}
         {onEdit && (
@@ -270,7 +279,7 @@ function MyEntrySummary({
       <details className="edit-link">
         <summary>Ändra från en annan telefon</summary>
         <p className="muted small">
-          Den här telefonen kommer ihåg ditt hus. Spara länken om du vill kunna ändra från en annan. Dela den inte, den
+          Den här telefonen kommer ihåg {noun.yours}. Spara länken om du vill kunna ändra från en annan. Dela den inte, den
           som har länken kan ändra.
         </p>
         <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Ändringslänk" />

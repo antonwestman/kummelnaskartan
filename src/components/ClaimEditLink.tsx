@@ -35,7 +35,7 @@ export function ClaimEditLink() {
   return (
     <main className="page narrow">
       {state.status === 'pending' ? (
-        <p>Hämtar ditt hus…</p>
+        <p>Hämtar…</p>
       ) : (
         <>
           <h1>Länken fungerar inte</h1>
