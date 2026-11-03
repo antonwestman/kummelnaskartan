@@ -151,14 +151,6 @@ const PULKABACKAR: Place[] = [
     lng: 18.2736,
     note: 'Skid- och pulkabacke vid Friluftsfrämjandets anläggning, Styrbordsvägen 6.',
   },
-  {
-    id: 'nyckelviken',
-    name: 'Nyckelvikens pulkabacke',
-    category: 'pulkabacke',
-    lat: 59.3228,
-    lng: 18.1897,
-    note: 'Nära herrgården och bondgården i Nyckelvikens naturreservat.',
-  },
 ]
 
 export const EVENTS: KummelnasEvent[] = [
