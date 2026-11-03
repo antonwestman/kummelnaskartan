@@ -131,6 +131,20 @@ export async function fetchEntries(
   return { entries: data.entries, signup, summary: data.summary ?? null }
 }
 
+const OverviewSchema = z.object({
+  ok: z.literal(true),
+  entries: z.record(z.string(), z.array(EntrySchema)),
+  households: z.record(z.string(), z.number()),
+})
+
+/** Startsidan: varje events hus som visas just nu, och antal hushåll för event med sammanställning. */
+export type Overview = { entries: Record<string, Entry[]>; households: Record<string, number> }
+
+export async function fetchOverview(): Promise<Overview> {
+  const data = await request(OverviewSchema, undefined, '?overview=1')
+  return { entries: data.entries, households: data.households }
+}
+
 export async function createEntry(eventId: string, input: EntryInput): Promise<{ entry: Entry; token: string }> {
   const data = await post(CreatedSchema, { action: 'create', event: eventId, ...input })
   return { entry: data.entry, token: data.token }

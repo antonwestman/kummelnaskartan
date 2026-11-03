@@ -1,9 +1,13 @@
 :root {
-  --bg: #100f0d;
-  --surface: #1a1815;
-  --line: #2b2823;
-  --text: #ece6da;
-  --muted: #8f877a;
+  /* Granit och kummelsten: kall, mörk grå. */
+  --bg: #0f1112;
+  --surface: #181b1c;
+  --line: #272c2e;
+  --text: #e9e7e2;
+  --muted: #8c9290;
+  /* Tall och hav: det man känner igen sajten på (rubrik, länkar, datum). */
+  --brand: #6fb3a3;
+  /* "Lyser": något händer här. Samma året runt, och bara för det som lyser och för knappar. */
   --accent: #ff8a2a;
   --accent-dim: #c4651c;
   --place: #d8ecff;
@@ -29,7 +33,7 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--brand);
 }
 
 h1,
@@ -113,7 +117,11 @@ code {
   justify-items: center;
   width: 44px;
   line-height: 1.1;
-  color: var(--accent);
+  color: var(--brand);
+}
+
+.event-icon {
+  font-size: 1.5rem;
 }
 
 .event-day {
@@ -147,7 +155,24 @@ code {
 }
 
 .event-row:hover .event-title {
-  color: var(--accent);
+  color: var(--brand);
+}
+
+/* Startsidan använder samma layout som eventsidorna: kartan och listan bredvid. Namnet i toppraden är rubriken. */
+h1.topbar-home {
+  font-size: 1rem;
+}
+
+.start-layout .event-row:first-child {
+  padding-top: 10px;
+}
+
+.topbar-today {
+  min-width: 0;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Eventsida (mobil först) ---------- */
@@ -167,7 +192,7 @@ code {
 
 .topbar-home {
   font-weight: 700;
-  color: var(--text);
+  color: var(--brand);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -504,6 +529,7 @@ select:focus {
 
 .popup-links {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   margin-top: 4px;

@@ -5,6 +5,7 @@ const event = (id: string, startsAt: string, endsAt: string): KummelnasEvent => 
   startsAt,
   endsAt,
   title: id,
+  icon: '',
   periodLabel: '',
   summary: '',
   details: [],

@@ -102,6 +102,8 @@ export type KummelnasEvent = {
    */
   id: string
   title: string
+  /** Visas i listan och filtret på startsidan. */
+  icon: string
   /**
    * När eventet börjar och slutar, med tidszon (+01:00 vintertid, +02:00 sommartid).
    * Styr var eventet listas på startsidan: "Kommande" före startsAt, "På gång" fram till endsAt,
@@ -163,6 +165,7 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'halloween-2026',
     title: 'Trick or treat',
+    icon: '🎃',
     startsAt: '2026-10-31T17:00:00+01:00',
     endsAt: '2026-11-01T00:00:00+01:00',
     periodLabel: 'Lördag 31 oktober 2026',
@@ -174,6 +177,7 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'loppisar',
     title: 'Loppisar',
+    icon: '🏷️',
     startsAt: '2026-11-01T00:00:00+01:00',
     endsAt: '2028-01-01T00:00:00+01:00',
     periodLabel: 'Året runt',
@@ -191,6 +195,7 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'pulkabackar-2026-27',
     title: 'Pulkabackar',
+    icon: '🛷',
     startsAt: '2026-12-01T00:00:00+01:00',
     endsAt: '2027-04-01T00:00:00+02:00',
     periodLabel: 'Vintern 2026/27',
@@ -216,6 +221,7 @@ export const EVENTS: KummelnasEvent[] = [
   {
     id: 'ute',
     title: 'Ute i Kummelnäs',
+    icon: '🌲',
     startsAt: '2026-11-01T00:00:00+01:00',
     endsAt: '2030-01-01T00:00:00+01:00',
     periodLabel: 'Året runt',

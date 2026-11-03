@@ -72,6 +72,7 @@ var REPORT_MAX_LENGTH = { event: 40, id: 80, label: 120, comment: 500, contact: 
 
 function doGet(e) {
   return handle_(function () {
+    if (e.parameter.overview) return overview_();
     var eventId = e.parameter.event;
     var sheet = getEventSheet_(eventId);
     var entries = readRows_(sheet)
@@ -98,6 +99,29 @@ function doGet(e) {
       summary: summary
     };
   });
+}
+
+/**
+ * Startsidan: alla events hus som visas just nu, i ett enda anrop, plus hur många som var med i event
+ * som har en sparad sammanställning. Event utan flik i Sheetet hoppas över.
+ */
+function overview_() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var entries = {};
+  var households = {};
+  Object.keys(EVENTS).forEach(function (eventId) {
+    var sheet = spreadsheet.getSheetByName(eventId);
+    if (sheet && sheet.getLastRow() >= 2) {
+      entries[eventId] = readRows_(sheet)
+        .filter(function (entry) { return !isExpired_(eventId, entry); })
+        .map(publicEntry_);
+    } else {
+      entries[eventId] = [];
+    }
+    var summary = findSummary_(eventId);
+    if (summary) households[eventId] = summary.households;
+  });
+  return { ok: true, entries: entries, households: households };
 }
 
 function doPost(e) {
