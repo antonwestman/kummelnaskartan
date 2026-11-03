@@ -299,6 +299,29 @@ h1.topbar-home {
   font-weight: 600;
 }
 
+/* Vädret: diskret i kartans övre högra hörn. */
+.weather {
+  position: absolute;
+  z-index: 500;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgb(15 17 18 / 0.8);
+  color: var(--muted);
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+.weather-icon {
+  filter: grayscale(1) brightness(1.15);
+  opacity: 0.85;
+}
+
 .locate.active {
   color: #5b9bff;
 }

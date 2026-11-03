@@ -20,6 +20,13 @@ export function AboutData() {
         Tips och rapporter går till den som sköter kartan och visas inte för andra. Lämnar du kontaktuppgifter används
         de bara för att svara dig.
       </p>
+      <p>
+        Kartbilderna kommer från OpenStreetMap och vädret från{' '}
+        <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
+          Open-Meteo
+        </a>
+        . De hämtas direkt av din webbläsare, så de tjänsterna ser din IP-adress men inget du skriver.
+      </p>
       <p>Besöksstatistiken räknar bara sidvisningar. Den använder inga cookies och får aldrig det du skriver.</p>
       <p>
         Är något fel, eller har någon lagt in din adress utan att fråga? Tryck på det på kartan och välj
