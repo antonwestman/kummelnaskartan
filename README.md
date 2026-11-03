@@ -78,8 +78,13 @@ Platser som ingen äger läggs in direkt i `places.items` i `src/events.ts`, int
 - `season` (valfritt): `'summer'` visas juni–augusti, `'winter'` december–mars. Utan säsong visas platsen året runt.
 - `note` och `warning` (valfria): en kort beskrivning, och en brasklapp som syns tydligt (t.ex. för naturis).
 
-Koordinater får du genom att högerklicka på platsen i Google Maps. Besökare kan tipsa om platser via en
-mejllänk under listan. Du lägger sedan in dem här.
+Koordinater får du genom att högerklicka på platsen i Google Maps.
+
+**Tips från besökare:** under listan står "Vet du en allmän plats som borde vara med? Tipsa om den" (med `tipName`, t.ex. "allmän backe" på pulkakartan). Besökaren väljer vad det är, skriver ett namn
+och sätter ut platsen på en karta som börjar på ens egen position. Tipset hamnar i fliken `tips` i Sheetet
+(skapas automatiskt, med en länk till Google Maps), och `Code.gs` mejlar det till `TIP_EMAIL`. Tipsen syns
+inte på kartan. Lägg in de bra här. Kör `authorize` en gång från Apps Script-editorn så att skriptet får
+skicka mejl. Utan `SCRIPT_URL` finns bara en mejllänk.
 
 **Bara platser, inga hus:** med `signup: null` (som "Ute i Kummelnäs") finns inget formulär, och sidan hämtar
 inget från Apps Script. Ingen flik i Sheetet och ingen rad i `Code.gs` behövs.
@@ -107,6 +112,16 @@ Appen använder vanliga sökvägar (`/`, `/halloween-2026/`). Efter `vite build`
 `scripts/prerender.ts` och skriver en färdig HTML-fil per sida, med titel, beskrivning, Open Graph,
 strukturerad data (schema.org) och synligt innehåll, plus `404.html` som fångar övriga adresser
 (t.ex. ändringslänkar) och `sitemap.xml`. Gamla `#/`-länkar skickas vidare till de nya adresserna.
+
+## Rapporter
+
+I popupen för varje hus och plats finns **Rapportera**. Besökaren väljer vad som är fel (fel information,
+inte en allmän plats, sin egen adress utlagd utan lov, eller annat), kan skriva en kommentar och lämna
+kontaktuppgifter. Rapporten hamnar i fliken `rapporter` (skapas automatiskt) och mejlas till `TIP_EMAIL`.
+**Inget döljs automatiskt.** Ett hus tar du bort genom att radera dess rad i eventets flik. Det sparas
+ingenting om vem som lagt in något (inga konton, och Apps Script ser inga IP-adresser), så det går inte
+att blockera en person. Spärrarna är `MAX_CREATES_PER_MINUTE`, `MAX_ENTRIES_PER_EVENT` och att stänga
+anmälan med `signupClosesAt`.
 
 ## Säkerhet
 

@@ -1,15 +1,18 @@
 /** Vad för slags plats: styr ikon, namn i listan och filtret. */
-export type PlaceCategory =
-  | 'pulkabacke'
-  | 'lekplats'
-  | 'bad'
-  | 'isbana'
-  | 'grillplats'
-  | 'utsikt'
-  | 'vindskydd'
-  | 'fiske'
-  | 'aktivitet'
-  | 'batbrygga'
+export const PLACE_CATEGORY_IDS = [
+  'lekplats',
+  'bad',
+  'grillplats',
+  'utsikt',
+  'vindskydd',
+  'fiske',
+  'aktivitet',
+  'pulkabacke',
+  'isbana',
+  'batbrygga',
+] as const
+
+export type PlaceCategory = (typeof PLACE_CATEGORY_IDS)[number]
 
 export const PLACE_CATEGORIES: Record<PlaceCategory, { label: string; plural: string; icon: string }> = {
   pulkabacke: { label: 'Allmän backe', plural: 'Allmänna backar', icon: '🛷' },
@@ -45,6 +48,8 @@ export type Place = {
 export type PlaceLayer = {
   /** Rubrik för listan, t.ex. "Allmänna backar". */
   heading: string
+  /** Vad man tipsar om, i obestämd form: "allmän plats", "allmän backe". */
+  tipName: string
   items: Place[]
 }
 
@@ -203,6 +208,7 @@ export const EVENTS: KummelnasEvent[] = [
     },
     places: {
       heading: 'Allmänna backar',
+      tipName: 'allmän backe',
       // Lägg till fler backar i PULKABACKAR ovan.
       items: PULKABACKAR,
     },
@@ -218,6 +224,7 @@ export const EVENTS: KummelnasEvent[] = [
     signup: null,
     places: {
       heading: 'Platser',
+      tipName: 'allmän plats',
       items: [
         { id: 'midsommarangen', name: 'Midsommarängens lekplats', category: 'lekplats', lat: 59.357537, lng: 18.287556 },
         { id: 'rudsjokroken', name: 'Rudsjökrokens lekplats', category: 'lekplats', lat: 59.348247, lng: 18.293235 },

@@ -11,6 +11,8 @@ function renderList(props: Partial<ComponentProps<typeof PlaceList>> = {}) {
   render(
     <PlaceList
       heading="Platser"
+      tipName="allmän plats"
+      eventId="ute"
       eventTitle="Ute i Kummelnäs"
       places={[backen]}
       total={1}
@@ -51,7 +53,24 @@ it('shows the warning for a place, e.g. natural ice', () => {
   expect(screen.getByText('Kolla isen själv.')).toBeInTheDocument()
 })
 
-it('lets visitors tip about a missing place by email', () => {
+it('lets visitors tip about a place, or email instead', async () => {
+  renderList({ places: [], total: 0, categories: [], tipName: 'allmän backe' })
+  expect(screen.getByText(/Vet du en allmän backe som borde vara med/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /mejla/ }).getAttribute('href')).toMatch(
+    /^mailto:hej@kummelnaskartan\.se\?subject=Tips%20till/,
+  )
+
+  await userEvent.click(screen.getByRole('button', { name: 'Tipsa om den' }))
+  expect(screen.getByText(/Bara allmänna platser/)).toBeInTheDocument()
+})
+
+it('asks for a position before a tip can be sent', async () => {
   renderList({ places: [], total: 0, categories: [] })
-  expect(screen.getByRole('link', { name: /Tipsa/ }).getAttribute('href')).toMatch(/^mailto:hej@kummelnaskartan\.se\?subject=Tips%20till/)
+  await userEvent.click(screen.getByRole('button', { name: 'Tipsa om den' }))
+
+  await userEvent.selectOptions(screen.getByLabelText('Vad är det?'), 'grillplats')
+  await userEvent.type(screen.getByLabelText('Namn eller kort beskrivning'), 'Grillplats vid stigen')
+  await userEvent.click(screen.getByRole('button', { name: 'Skicka tipset' }))
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Tryck på kartan där platsen ligger.')
 })
